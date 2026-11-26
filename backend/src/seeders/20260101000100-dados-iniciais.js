@@ -20,9 +20,9 @@ module.exports = {
 
     // ---------------- Usuários ----------------
     await queryInterface.bulkInsert('usuarios', [
-      { id: 1, nome: 'Administrador', email: 'admin@provedor.com', senhaHash: await bcrypt.hash('admin123', 10), perfil: 'admin', ativo: true, ...ts },
-      { id: 2, nome: 'Almoxarifado', email: 'almoxarife@provedor.com', senhaHash: await bcrypt.hash('almox123', 10), perfil: 'almoxarife', ativo: true, ...ts },
-      { id: 3, nome: 'Consulta', email: 'consulta@provedor.com', senhaHash: await bcrypt.hash('consulta123', 10), perfil: 'consulta', ativo: true, ...ts },
+      { id: 1, nome: 'Administrador', email: 'admin@provedor.com', senhaHash: await bcrypt.hash('admin123', 10), perfil: 'admin', precisaTrocarSenha: true, ativo: true, ...ts },
+      { id: 2, nome: 'Almoxarifado', email: 'almoxarife@provedor.com', senhaHash: await bcrypt.hash('almox123', 10), perfil: 'almoxarife', precisaTrocarSenha: true, ativo: true, ...ts },
+      { id: 3, nome: 'Consulta', email: 'consulta@provedor.com', senhaHash: await bcrypt.hash('consulta123', 10), perfil: 'consulta', precisaTrocarSenha: true, ativo: true, ...ts },
     ]);
 
     // ---------------- Categorias ----------------

@@ -1,7 +1,8 @@
 const { Router } = require('express');
 const a = require('../utils/async');
 const validar = require('../middlewares/validar');
-const { autenticar, permitir } = require('../middlewares/auth');
+const { autenticar, exigirSenhaDefinitiva, permitir } = require('../middlewares/auth');
+const { limiteLogin } = require('../middlewares/limites');
 const v = require('./validacoes');
 
 const auth = require('../controllers/authController');
@@ -14,6 +15,8 @@ const equipamentos = require('../controllers/equipamentoController');
 const movimentacoes = require('../controllers/movimentacaoController');
 const dashboard = require('../controllers/dashboardController');
 const relatorios = require('../controllers/relatorioController');
+const importacao = require('../controllers/importacaoController');
+const { uploadPlanilha } = require('../middlewares/upload');
 
 const router = Router();
 
@@ -23,11 +26,12 @@ const ADMIN = permitir('admin');
 router.get('/saude', (req, res) => res.json({ status: 'ok', horario: new Date().toISOString() }));
 
 // Autenticação
-router.post('/auth/login', validar(v.login), a(auth.login));
+router.post('/auth/login', limiteLogin, validar(v.login), a(auth.login));
 router.get('/auth/me', autenticar, a(auth.me));
+router.post('/auth/trocar-senha', autenticar, validar(v.trocarSenha), a(auth.trocarSenha));
 
-// Daqui para baixo, todas as rotas exigem login
-router.use(autenticar);
+// Daqui para baixo, todas as rotas exigem login e senha definitiva
+router.use(autenticar, exigirSenhaDefinitiva);
 
 /** Registra um CRUD padrão: leitura para todos, criação/edição para admin+almoxarife e exclusão só para admin. */
 function crud(caminho, controller, regras, regrasParciais = regras) {
@@ -65,5 +69,11 @@ router.post('/movimentacoes', ESCRITA, validar(v.movimentacao), a(movimentacoes.
 // Painel e relatórios
 router.get('/dashboard', a(dashboard.resumo));
 router.get('/relatorios/exportar', validar(v.filtrosMovimentacao), a(relatorios.exportar));
+router.get('/relatorios/dados', validar(v.filtrosMovimentacao), a(relatorios.dados));
+
+// Importação de planilhas (.xlsx). simular=true (padrão) só mostra a prévia; simular=false grava.
+router.get('/importacao/modelo/:tipo', ESCRITA, a(importacao.modelo));
+router.post('/importacao/produtos', ESCRITA, uploadPlanilha, a(importacao.produtos));
+router.post('/importacao/entrada', ESCRITA, uploadPlanilha, a(importacao.entrada));
 
 module.exports = router;

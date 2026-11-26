@@ -42,6 +42,9 @@ api.interceptors.response.use(
   (resposta) => resposta,
   (erro) => {
     const ehLogin = erro.config?.url?.includes('/auth/login');
+    if (erro.response?.data?.codigo === 'TROCA_SENHA_OBRIGATORIA' && window.location.pathname !== '/trocar-senha') {
+      window.location.assign('/trocar-senha');
+    }
     if (erro.response?.status === 401 && !ehLogin) {
       token.limpar();
       if (window.location.pathname !== '/login') {
@@ -58,11 +61,29 @@ export function mensagemErro(erro, padrao = 'Não foi possível concluir a opera
   return erro.response.data?.erro || padrao;
 }
 
+// Em downloads (responseType blob) o JSON de erro chega como Blob: converte para a mensagem continuar aparecendo
+api.interceptors.response.use(undefined, async (erro) => {
+  const dados = erro.response?.data;
+  if (dados instanceof Blob && dados.type.includes('json')) {
+    try {
+      erro.response.data = JSON.parse(await dados.text());
+    } catch {
+      /* mantém o original */
+    }
+  }
+  return Promise.reject(erro);
+});
+
 /** Baixa um relatório CSV da API (com o token no cabeçalho). */
-export async function baixarCSV(params) {
-  const resposta = await api.get('/relatorios/exportar', { params, responseType: 'blob' });
+export function baixarCSV(params) {
+  return baixarArquivo('/relatorios/exportar', params, 'relatorio.csv');
+}
+
+/** Baixa qualquer arquivo da API usando o nome enviado no Content-Disposition. */
+export async function baixarArquivo(caminho, params, nomePadrao = 'arquivo') {
+  const resposta = await api.get(caminho, { params, responseType: 'blob' });
   const disposicao = resposta.headers['content-disposition'] || '';
-  const nome = /filename="([^"]+)"/.exec(disposicao)?.[1] || 'relatorio.csv';
+  const nome = /filename="([^"]+)"/.exec(disposicao)?.[1] || nomePadrao;
   const url = URL.createObjectURL(resposta.data);
   const link = document.createElement('a');
   link.href = url;

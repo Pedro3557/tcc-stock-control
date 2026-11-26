@@ -8,6 +8,15 @@ const login = [
   body('senha').notEmpty().withMessage('Informe a senha.'),
 ];
 
+const trocarSenha = [
+  body('senhaAtual').notEmpty().withMessage('Informe a senha atual.'),
+  body('novaSenha')
+    .isString().withMessage('Informe a nova senha.').bail()
+    .isLength({ min: 8 }).withMessage('A nova senha deve ter pelo menos 8 caracteres.').bail()
+    .matches(/[A-Za-z]/).withMessage('A nova senha deve ter ao menos uma letra.').bail()
+    .matches(/\d/).withMessage('A nova senha deve ter ao menos um número.'),
+];
+
 const categoria = [
   body('nome').isString().withMessage('Informe o nome.').bail().trim().isLength({ min: 2, max: 80 }).withMessage('O nome da categoria deve ter entre 2 e 80 caracteres.'),
 ];
@@ -97,6 +106,7 @@ const filtrosEquipamento = [
 module.exports = {
   id,
   login,
+  trocarSenha,
   categoria,
   produto,
   tecnico,

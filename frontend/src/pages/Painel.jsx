@@ -8,6 +8,7 @@ import Carregando from '../components/Carregando.jsx';
 import Vazio from '../components/Vazio.jsx';
 import NivelEstoque from '../components/NivelEstoque.jsx';
 import Icone from '../components/Icone.jsx';
+import { GraficoMovimentacoes, GraficoStatus } from '../components/Graficos.jsx';
 
 function Indicador({ rotulo, valor, detalhe, alerta, para }) {
   const conteudo = (
@@ -71,6 +72,11 @@ export default function Painel() {
         />
         <Indicador rotulo="Movimentações hoje" valor={dados.movimentacoesHoje} para="/movimentacoes" />
         <Indicador rotulo="Equipamentos em estoque" valor={dados.totalEquipamentosEmEstoque} detalhe={`${formatarQtd(dados.totalUnidadesMaterial)} unid./m de material`} />
+      </div>
+
+      <div className="grade-2">
+        <GraficoMovimentacoes dados={dados.movimentacoesPorDia} />
+        <GraficoStatus equipamentos={eq} />
       </div>
 
       <div className="grade-2">

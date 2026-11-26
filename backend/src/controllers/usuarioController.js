@@ -19,6 +19,8 @@ async function criar(req, res) {
     email: email.trim().toLowerCase(),
     perfil,
     senhaHash: await bcrypt.hash(senha, 10),
+    // Senha definida pelo admin é provisória: o usuário troca no primeiro acesso
+    precisaTrocarSenha: true,
     ativo: true,
   });
   res.status(201).json(usuario);
@@ -42,7 +44,11 @@ async function atualizar(req, res) {
   if (email !== undefined) dados.email = email.trim().toLowerCase();
   if (perfil !== undefined) dados.perfil = perfil;
   if (ativo !== undefined) dados.ativo = Boolean(ativo);
-  if (senha) dados.senhaHash = await bcrypt.hash(senha, 10);
+  if (senha) {
+    dados.senhaHash = await bcrypt.hash(senha, 10);
+    // Senha redefinida pelo admin para outra pessoa vira provisória
+    dados.precisaTrocarSenha = !proprio;
+  }
 
   await usuario.update(dados);
   res.json(usuario);

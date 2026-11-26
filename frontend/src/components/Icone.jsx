@@ -16,6 +16,10 @@ const CAMINHOS = {
   mais: 'M12 5v14M5 12h14',
   alerta: 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01',
   voltar: 'M19 12H5M12 19l-7-7 7-7',
+  relatorio: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8M8 9h2',
+  planilha: 'M4 3h16v18H4zM4 9h16M4 15h16M10 3v18',
+  pdf: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15h6M12 12v6',
+  subir: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
 };
 
 export default function Icone({ nome, tamanho = 18, className = '' }) {

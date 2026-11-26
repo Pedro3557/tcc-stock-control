@@ -16,7 +16,7 @@ export default function Login() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
 
-  if (usuario) return <Navigate to="/" replace />;
+  if (usuario) return <Navigate to={usuario.precisaTrocarSenha ? '/trocar-senha' : '/'} replace />;
 
   async function enviar(e) {
     e.preventDefault();
@@ -24,6 +24,10 @@ export default function Login() {
     setEnviando(true);
     try {
       const u = await entrar(email.trim(), senha);
+      if (u.precisaTrocarSenha) {
+        navegar('/trocar-senha', { replace: true });
+        return;
+      }
       toast.sucesso(`Bem-vindo(a), ${u.nome}!`);
       navegar(local.state?.de || '/', { replace: true });
     } catch (falha) {

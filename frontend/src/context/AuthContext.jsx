@@ -26,6 +26,9 @@ export function AuthProvider({ children }) {
     return data.usuario;
   }, []);
 
+  /** Atualiza os dados do usuário logado (ex.: depois de trocar a senha). */
+  const atualizarUsuario = useCallback((dados) => setUsuario((u) => ({ ...u, ...dados })), []);
+
   const sair = useCallback(() => {
     token.limpar();
     setUsuario(null);
@@ -38,12 +41,14 @@ export function AuthProvider({ children }) {
       carregando,
       entrar,
       sair,
+      atualizarUsuario,
+      precisaTrocarSenha: Boolean(usuario?.precisaTrocarSenha),
       ehAdmin: perfil === 'admin',
       podeMovimentar: perfil === 'admin' || perfil === 'almoxarife',
       podeEditar: perfil === 'admin' || perfil === 'almoxarife',
       podeExcluir: perfil === 'admin',
     };
-  }, [usuario, carregando, entrar, sair]);
+  }, [usuario, carregando, entrar, sair, atualizarUsuario]);
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }

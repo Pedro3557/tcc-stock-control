@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import RotaProtegida from './components/RotaProtegida.jsx';
 import Login from './pages/Login.jsx';
+import TrocarSenha from './pages/TrocarSenha.jsx';
+import Relatorios from './pages/Relatorios.jsx';
+import Importar from './pages/Importar.jsx';
 import Painel from './pages/Painel.jsx';
 import Produtos from './pages/Produtos.jsx';
 import Equipamentos from './pages/Equipamentos.jsx';
@@ -19,6 +22,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/trocar-senha" element={<TrocarSenha />} />
       <Route element={<RotaProtegida><Layout /></RotaProtegida>}>
         <Route index element={<Painel />} />
         <Route path="produtos" element={<Produtos />} />
@@ -29,6 +33,11 @@ export default function App() {
           element={<RotaProtegida perfis={['admin', 'almoxarife']}><NovaMovimentacao /></RotaProtegida>}
         />
         <Route path="movimentacoes" element={<Movimentacoes />} />
+        <Route path="relatorios" element={<Relatorios />} />
+        <Route
+          path="importar"
+          element={<RotaProtegida perfis={['admin', 'almoxarife']}><Importar /></RotaProtegida>}
+        />
         <Route path="tecnicos" element={<Tecnicos />} />
         <Route path="tecnicos/:id" element={<TecnicoEstoque />} />
         <Route path="fornecedores" element={<Fornecedores />} />

@@ -30,6 +30,19 @@ async function autenticar(req, res, next) {
   }
 }
 
+/**
+ * Enquanto o usuário não trocar a senha provisória, só pode acessar /auth/me e /auth/trocar-senha.
+ */
+function exigirSenhaDefinitiva(req, res, next) {
+  if (req.usuario?.precisaTrocarSenha) {
+    return res.status(403).json({
+      erro: 'Troque a sua senha provisória antes de continuar.',
+      codigo: 'TROCA_SENHA_OBRIGATORIA',
+    });
+  }
+  return next();
+}
+
 /** Libera a rota apenas para os perfis informados. */
 function permitir(...perfis) {
   return (req, res, next) => {
@@ -40,4 +53,4 @@ function permitir(...perfis) {
   };
 }
 
-module.exports = { autenticar, permitir };
+module.exports = { autenticar, exigirSenhaDefinitiva, permitir };

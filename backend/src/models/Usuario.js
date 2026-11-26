@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       email: { type: DataTypes.STRING(160), allowNull: false, unique: true },
       senhaHash: { type: DataTypes.STRING(100), allowNull: false },
       perfil: { type: DataTypes.ENUM(...PERFIS), allowNull: false, defaultValue: 'consulta' },
+      precisaTrocarSenha: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       ativo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     },
     {

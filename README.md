@@ -7,6 +7,10 @@ Sistema web de **controle de estoque** para o almoxarifado de **uma** empresa pr
 - **Back-end:** Node.js + Express + Sequelize + MySQL (`/backend`)
 - **Banco:** MySQL 8 (via `docker-compose.yml` para desenvolvimento)
 
+> 🪟 **Vai instalar no Windows?** Siga o [guia passo a passo para Windows](GUIA_INSTALACAO_WINDOWS.md).
+
+Principais recursos: estoque de equipamentos serializados e materiais por quantidade, movimentações com regras de status, painel com gráficos, relatórios em **PDF** e **CSV**, termo de responsabilidade do técnico, **importação de planilhas do Excel**, troca de senha obrigatória no primeiro acesso e limite de tentativas de login.
+
 O sistema controla dois tipos de item:
 
 | Tipo | Como é controlado | Exemplos |
@@ -88,7 +92,7 @@ npm start        # produção
 
 A API fica em `http://localhost:3333/api` (teste: `http://localhost:3333/api/saude`).
 
-Outros scripts: `npm run migrate:undo` (desfaz todas as migrations) e `npm run seed:undo` (remove os dados do seed).
+Outros scripts: `npm test` (testes automatizados), `npm run migrate:undo` (desfaz todas as migrations), `npm run seed:undo` (remove os dados do seed) e `npm run redefinir-senha -- <email> <senha>` (redefine a senha de um usuário).
 O banco é sempre criado por **migrations** — o sistema não usa `sync({ force: true })`.
 
 ### Usuários criados pelo seed
@@ -99,7 +103,7 @@ O banco é sempre criado por **migrations** — o sistema não usa `sync({ force
 | almoxarife | `almoxarife@provedor.com` | `almox123` |
 | consulta | `consulta@provedor.com` | `consulta123` |
 
-> Troque essas senhas (tela **Usuários**) antes de usar em produção.
+> No primeiro acesso, cada usuário é **obrigado a trocar a senha** (mínimo de 8 caracteres, com letras e números). O mesmo vale para usuários criados pelo admin ou com senha redefinida por ele.
 
 O seed também cria: categorias (ONU/ONT, Roteadores, Mesh, Switches, Rádios, Módulos SFP, Cabos, Conectores, Splitters, Caixas, Acessórios, Ferramentas), 15 produtos típicos de provedor, 19 unidades de ONU/roteador/SFP com números de série e MAC de exemplo (algumas em estoque, com técnico, em comodato, em manutenção e com defeito), 2 técnicos, 1 fornecedor e as movimentações que geram esses saldos.
 
@@ -110,11 +114,13 @@ Em outro terminal:
 ```bash
 cd frontend
 npm install
-cp .env.example .env        # VITE_API_URL=http://localhost:3333/api
+cp .env.example .env        # VITE_API_URL e VITE_EMPRESA_NOME
 npm run dev
 ```
 
 Acesse `http://localhost:5173` e entre com `admin@provedor.com` / `admin123`.
+
+`VITE_EMPRESA_NOME` é o nome que aparece no cabeçalho dos PDFs.
 
 Para gerar a versão de produção: `npm run build` (arquivos em `frontend/dist`, que podem ser servidos por qualquer servidor web — configure o fallback de rotas para `index.html`).
 
@@ -135,7 +141,46 @@ Para gerar a versão de produção: `npm run build` (arquivos em `frontend/dist`
 
 Os botões são escondidos no front-end conforme o perfil, e a API também bloqueia (403).
 
-## 6. Movimentações e regras
+## 6. Recursos
+
+### Segurança no login
+- Senha guardada com hash **bcrypt** e login por **JWT** (validade de 10 h).
+- **Troca de senha obrigatória** no primeiro acesso: enquanto a senha for provisória, a API só responde a `/auth/me` e `/auth/trocar-senha` (as outras rotas devolvem 403 com `codigo: "TROCA_SENHA_OBRIGATORIA"`).
+- **Limite de tentativas**: após 10 logins errados em 15 minutos (por IP + e-mail) a API responde 429. Logins certos não contam.
+- Qualquer usuário pode trocar a própria senha pelo link **Trocar senha** no menu.
+
+### Relatórios (tela **Relatórios**)
+| Relatório | PDF | CSV |
+|---|:-:|:-:|
+| Estoque atual (itens abaixo do mínimo em vermelho) | ✓ | ✓ |
+| Equipamentos por status (filtro de status) | ✓ | ✓ |
+| Movimentações do período (filtros de data e tipo) | ✓ | ✓ |
+| **Termo de responsabilidade do técnico** (o que ele tem em mãos + linhas para assinatura) | ✓ | — |
+
+O PDF é gerado no navegador (jsPDF), com cabeçalho da empresa, resumo, tabela e numeração de páginas. O termo também pode ser gerado na tela do técnico.
+
+### Importação de planilha (tela **Importar planilha** — admin e almoxarife)
+1. **Baixe o modelo** (.xlsx). A aba *Instruções* explica cada coluna.
+2. Preencha e envie. Duas opções:
+   - **Cadastro de produtos** — colunas `codigo`, `nome`, `categoria` (obrigatórias), `marca`, `modelo`, `tipo_controle`, `unidade`, `local`, `estoque_minimo`, `custo_unitario`. Código existente = atualiza o cadastro; categoria nova é criada.
+   - **Entrada de compra** — fornecedor e nota fiscal escolhidos na tela; colunas `codigo` + `quantidade` (materiais) ou `codigo` + `numero_serie` + `mac` (uma linha por equipamento) e `custo_unitario` opcional.
+3. **Ver prévia**: confere tudo sem gravar e lista os erros com o número da linha.
+4. **Confirmar importação**: grava tudo em **uma única transação** — se houver qualquer erro, nada é gravado.
+
+Cabeçalhos aceitam variações (ex.: "Número de série", "Serial", "SN"); números aceitam vírgula decimal (`0,45`, `1.234,56`). Limite: 5 MB e 5.000 linhas.
+
+### Painel com gráficos
+- **Movimentações por dia** (últimos 14 dias): entradas × saídas, com dica ao passar o mouse e opção "Ver em tabela".
+- **Equipamentos por status**: quantas unidades estão em estoque, com técnico, em comodato, em manutenção, com defeito e baixadas.
+
+### Testes automatizados
+```bash
+cd backend
+npm test
+```
+Testam as regras que não dependem do banco: MAC, lista de seriais, regras de status, CSV e leitura das planilhas.
+
+## 7. Movimentações e regras
 
 | Tipo | Serializado | Quantidade | Efeito |
 |---|:-:|:-:|---|
@@ -161,7 +206,7 @@ Regras garantidas pela API:
 
 ---
 
-## 7. Rotas da API
+## 8. Rotas da API
 
 Base: `http://localhost:3333/api`. Todas as respostas são JSON (exceto o CSV). Erros vêm como `{ "erro": "mensagem", "detalhes": [...] }`.
 Exceto login e saúde, todas exigem o cabeçalho `Authorization: Bearer <token>`.
@@ -171,8 +216,9 @@ Exceto login e saúde, todas exigem o cabeçalho `Authorization: Bearer <token>`
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/saude` | Verifica se a API está no ar (sem login) |
-| POST | `/auth/login` | `{ email, senha }` → `{ token, usuario }` |
-| GET | `/auth/me` | Dados do usuário logado |
+| POST | `/auth/login` | `{ email, senha }` → `{ token, usuario }`. Máx. 10 erros a cada 15 min (429) |
+| GET | `/auth/me` | Dados do usuário logado (inclui `precisaTrocarSenha`) |
+| POST | `/auth/trocar-senha` | `{ senhaAtual, novaSenha }` — mínimo 8 caracteres, com letra e número |
 
 ### Cadastros
 
@@ -201,6 +247,8 @@ Leitura: todos os perfis · criar/editar: admin e almoxarife · excluir: admin.
 | POST | `/fornecedores` | `{ nome, cnpj, telefone, email }` |
 | PUT | `/fornecedores/:id` | Mesmos campos |
 | DELETE | `/fornecedores/:id` | Exclui (só se não houver movimentações) |
+
+Exceto login, saúde, `/auth/me` e `/auth/trocar-senha`, as rotas também exigem que o usuário já tenha trocado a senha provisória.
 
 ### Usuários (somente admin)
 
@@ -233,7 +281,7 @@ Campos do `POST /movimentacoes`:
 
 | Campo | Uso |
 |---|---|
-| `tipo` | Obrigatório (ver tabela da seção 6) |
+| `tipo` | Obrigatório (ver tabela da seção 7) |
 | `produtoId` | Material por quantidade e toda entrada de compra |
 | `quantidade` | Material por quantidade |
 | `novaQuantidade` | Ajuste de inventário de material (quantidade contada) |
@@ -265,11 +313,23 @@ Exemplos:
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/dashboard` | Total de produtos, valor total do estoque, itens abaixo do mínimo (com lista), ONUs e roteadores disponíveis, disponíveis por categoria, equipamentos em comodato/manutenção/defeito/com técnico, material com técnicos (valor), movimentações do dia e as últimas 10 |
+| GET | `/relatorios/dados` | Os mesmos relatórios em JSON (`relatorio=estoque|equipamentos|movimentacoes` + filtros) — usados para montar o PDF |
 | GET | `/relatorios/exportar` | CSV separado por **ponto e vírgula** (com BOM, abre direto no Excel). `relatorio=estoque` (padrão) — estoque atual; `relatorio=equipamentos` — equipamentos por status (filtros `status`, `produtoId`); `relatorio=movimentacoes` — movimentações por período (mesmos filtros da listagem: `inicio`, `fim`, `tipo`, …) |
+
+### Importação de planilhas (admin e almoxarife)
+
+Envio em `multipart/form-data` com o arquivo no campo `arquivo`. `simular=true` (padrão) só confere; `simular=false` grava.
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/importacao/modelo/produtos` | Modelo .xlsx de cadastro de produtos |
+| GET | `/importacao/modelo/entrada` | Modelo .xlsx de entrada de compra |
+| POST | `/importacao/produtos` | `arquivo`, `simular` → `{ criados, atualizados, categoriasCriadas, erros, gravado }` |
+| POST | `/importacao/entrada` | `arquivo`, `fornecedorId`, `notaFiscal`, `observacao`, `simular` → `{ itens, erros, gravado }` |
 
 ---
 
-## 8. Telas
+## 9. Telas
 
 1. **Login**
 2. **Painel** — indicadores e lista de itens abaixo do mínimo
@@ -277,12 +337,15 @@ Exemplos:
 4. **Equipamentos** — busca rápida por nº de série/MAC (funciona com leitor de código de barras), filtro por status e tela de detalhe com o histórico da unidade
 5. **Nova movimentação** — o formulário muda conforme o tipo (técnico, cliente, OS, fornecedor, nota fiscal, lista de seriais)
 6. **Histórico** de movimentações com filtros e exportação CSV
-7. **Técnicos** — com o que cada um tem em mãos
-8. **Fornecedores**, **Categorias** e **Usuários** (só admin)
+7. **Técnicos** — com o que cada um tem em mãos e o termo de responsabilidade em PDF
+8. **Relatórios** — PDF e CSV
+9. **Importar planilha** — cadastro de produtos e entrada de compra em lote
+10. **Trocar senha** — obrigatória no primeiro acesso
+11. **Fornecedores**, **Categorias** e **Usuários** (só admin)
 
 Layout responsivo: no celular o menu vira gaveta e as tabelas viram cartões.
 
-## 9. Estrutura de pastas
+## 10. Estrutura de pastas
 
 ```
 backend/
@@ -296,20 +359,25 @@ backend/
     routes/        rotas e validações (express-validator)
     controllers/   regras de cada recurso
     middlewares/   autenticação JWT, perfis, validação, erros
-    services/      movimentações (transações), filtros, CSV
+    services/      movimentações (transações), importação de planilhas, filtros, CSV
     utils/
+  scripts/         redefinir-senha.js
+  tests/           testes automatizados (npm test)
 frontend/
   src/
     pages/         telas
     components/    layout, modal, tabela de cadastro, badges, barra de nível…
-    services/      cliente da API (Axios) e formatação (R$, datas)
+    services/      cliente da API (Axios), geração de PDF e formatação (R$, datas)
     context/       autenticação e toasts
 docker-compose.yml
 ```
 
-## 10. Problemas comuns
+## 11. Problemas comuns
 
 - **`Não foi possível conectar ao MySQL`** — confira se o container está *healthy* (`docker compose ps`) e se os dados do `.env` batem com o `docker-compose.yml`. Na primeira subida o MySQL leva alguns segundos para ficar pronto.
 - **Porta 3306 ocupada** — você já tem um MySQL local. Pare-o ou mude a porta no `docker-compose.yml` (ex.: `"3307:3306"`) e em `DB_PORT`.
 - **Tela volta para o login** — o token expirou (10 h) ou o usuário foi inativado. Entre novamente.
 - **Erro de CORS** — inclua a URL do front-end em `CORS_ORIGIN` no `.env` do back-end.
+- **"Muitas tentativas de login"** — aguarde 15 minutos ou reinicie a API (o contador fica em memória).
+- **Esqueci a senha do admin** — outro admin pode redefini-la na tela Usuários. Se não houver outro, na pasta `backend` rode `npm run redefinir-senha -- admin@provedor.com SenhaTemporaria1` (ela precisará ser trocada no próximo login).
+- **Planilha não é aceita** — salve como "Pasta de Trabalho do Excel (*.xlsx)". Arquivos .xls (antigo) e .csv não são aceitos na importação.

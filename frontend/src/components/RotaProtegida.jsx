@@ -8,6 +8,8 @@ export default function RotaProtegida({ children, perfis }) {
 
   if (carregando) return <Carregando tela />;
   if (!usuario) return <Navigate to="/login" replace state={{ de: local.pathname }} />;
+  // Senha provisória: obriga a troca antes de usar o sistema
+  if (usuario.precisaTrocarSenha) return <Navigate to="/trocar-senha" replace />;
   if (perfis && !perfis.includes(usuario.perfil)) {
     return (
       <div className="vazio">

@@ -8,9 +8,10 @@ import Carregando from '../components/Carregando.jsx';
 import Vazio from '../components/Vazio.jsx';
 import Icone from '../components/Icone.jsx';
 
+
 export default function TecnicoEstoque() {
   const { id } = useParams();
-  const { podeMovimentar } = useAuth();
+  const { podeMovimentar, usuario } = useAuth();
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
 
@@ -28,6 +29,9 @@ export default function TecnicoEstoque() {
     <>
       <Link to="/tecnicos" className="link-voltar"><Icone nome="voltar" tamanho={16} /> Técnicos</Link>
       <Cabecalho titulo={tecnico.nome} subtitulo={[tecnico.equipe, tecnico.telefone].filter(Boolean).join(' · ') || 'Técnico'}>
+        <button type="button" className="botao" onClick={async () => (await import('../services/pdf.js')).pdfTermoTecnico({ dados, usuario: usuario?.nome })}>
+          <Icone nome="pdf" tamanho={16} /> Termo (PDF)
+        </button>
         {podeMovimentar && !vazio && (
           <Link to={`/movimentacoes/nova?tipo=devolucao_tecnico&tecnicoId=${tecnico.id}`} className="botao">Registrar devolução</Link>
         )}

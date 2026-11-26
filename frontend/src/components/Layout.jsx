@@ -18,6 +18,8 @@ export default function Layout() {
     { para: '/equipamentos', rotulo: 'Equipamentos', icone: 'equipamentos' },
     podeMovimentar && { para: '/movimentacoes/nova', rotulo: 'Nova movimentação', icone: 'movimentar' },
     { para: '/movimentacoes', rotulo: 'Histórico', icone: 'historico', fim: true },
+    { para: '/relatorios', rotulo: 'Relatórios', icone: 'relatorio' },
+    podeMovimentar && { para: '/importar', rotulo: 'Importar planilha', icone: 'planilha' },
     { para: '/tecnicos', rotulo: 'Técnicos', icone: 'tecnicos' },
     { para: '/fornecedores', rotulo: 'Fornecedores', icone: 'fornecedores' },
     { para: '/categorias', rotulo: 'Categorias', icone: 'categorias' },
@@ -66,6 +68,7 @@ export default function Layout() {
           <div>
             <strong>{usuario?.nome}</strong>
             <small>{PERFIS[usuario?.perfil]}</small>
+            <NavLink to="/trocar-senha" className="link-suave">Trocar senha</NavLink>
           </div>
           <button type="button" className="botao-icone" onClick={fazerLogout} title="Sair" aria-label="Sair">
             <Icone nome="sair" />

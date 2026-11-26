@@ -20,4 +20,18 @@ async function me(req, res) {
   res.json(req.usuario.toJSON());
 }
 
-module.exports = { login, me };
+async function trocarSenha(req, res) {
+  const { senhaAtual, novaSenha } = req.body;
+  const usuario = await Usuario.scope('comSenha').findByPk(req.usuario.id);
+
+  const confere = await bcrypt.compare(senhaAtual, usuario.senhaHash);
+  if (!confere) throw new AppError('A senha atual está incorreta.', 400);
+  if (await bcrypt.compare(novaSenha, usuario.senhaHash)) {
+    throw new AppError('A nova senha precisa ser diferente da atual.', 400);
+  }
+
+  await usuario.update({ senhaHash: await bcrypt.hash(novaSenha, 10), precisaTrocarSenha: false });
+  res.json({ mensagem: 'Senha alterada com sucesso.', usuario: usuario.toJSON() });
+}
+
+module.exports = { login, me, trocarSenha };

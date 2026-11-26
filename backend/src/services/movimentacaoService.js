@@ -486,8 +486,14 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
 /**
  * Registra uma movimentação de estoque. Tudo acontece dentro de uma única transação:
  * o(s) registro(s) de movimentação e a atualização de saldo/status são gravados juntos.
+ * opcoes.transaction permite incluir o registro em uma transação maior (importação).
  */
-async function registrar(dadosBrutos, usuario) {
+/** Usa a transação recebida (ex.: importação de planilha) ou abre uma nova. */
+function emTransacao(transacaoExterna, fn) {
+  return transacaoExterna ? fn(transacaoExterna) : sequelize.transaction(fn);
+}
+
+async function registrar(dadosBrutos, usuario, opcoes = {}) {
   const d = {
     ...dadosBrutos,
     clienteCodigo: textoOuNull(dadosBrutos.clienteCodigo),
@@ -508,7 +514,7 @@ async function registrar(dadosBrutos, usuario) {
 
   validarCamposPorTipo(tipo, d);
 
-  const movimentacoes = await sequelize.transaction(async (t) => {
+  const movimentacoes = await emTransacao(opcoes.transaction, async (t) => {
     await carregarTecnico(d.tecnicoId, t, tipo === 'saida_tecnico', tipo);
     if (tipo === 'entrada_compra') await carregarFornecedor(d.fornecedorId, t);
 
