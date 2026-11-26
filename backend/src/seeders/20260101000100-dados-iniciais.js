@@ -9,6 +9,13 @@ const bcrypt = require('bcryptjs');
  */
 module.exports = {
   async up(queryInterface) {
+    // Pode rodar de novo sem erro: se já houver usuários, não mexe em nada
+    const [[{ total }]] = await queryInterface.sequelize.query('SELECT COUNT(*) AS total FROM usuarios');
+    if (Number(total) > 0) {
+      console.log('Dados iniciais já existem — nada a fazer.');
+      return;
+    }
+
     const agora = new Date();
     const diasAtras = (dias, horas = 9) => {
       const d = new Date(agora);

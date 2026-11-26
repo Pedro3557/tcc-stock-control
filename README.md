@@ -22,6 +22,18 @@ Status de um equipamento: `em_estoque`, `com_tecnico`, `instalado_cliente` (como
 
 ---
 
+## Início rápido
+
+Com o MySQL ligado (Docker: `docker compose up -d`), na **pasta principal** do projeto:
+
+```bash
+npm install          # instala back-end e front-end
+npm run configurar   # cria os .env, o banco, o usuário "estoque", as tabelas e os dados iniciais
+npm run dev          # liga a API (3333) e a tela (5173) juntas
+```
+
+Abra http://localhost:5173 e entre com `admin@provedor.com` / `admin123`. Se o usuário `estoque` não existir no seu MySQL, o `npm run configurar` pede a senha do root e cria tudo sozinho. As seções abaixo explicam o passo a passo manual.
+
 ## 1. Requisitos
 
 - **Node.js 20 ou superior** (`node -v`)

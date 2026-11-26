@@ -37,20 +37,15 @@ Escolha **uma** das opções.
 
 ### Opção B — MySQL Installer (sem Docker)
 
-1. Baixe o **MySQL Installer for Windows**: https://dev.mysql.com/downloads/installer/
+1. Baixe o **MySQL Installer for Windows**: https://dev.mysql.com/downloads/installer/ (o arquivo maior; na tela seguinte clique em *"No thanks, just start my download"*).
 2. Escolha **Server only**, versão **8.x**.
 3. Em *Authentication Method*, mantenha **Use Strong Password Encryption**.
-4. Defina uma senha para o usuário **root** e **anote**.
+4. Defina uma senha para o usuário **root** e **anote** — ela será pedida no PASSO 6.
 5. Conclua a instalação (deixe o serviço iniciar com o Windows).
-6. Abra o **MySQL 8.0 Command Line Client** (menu Iniciar), digite a senha do root e cole:
 
-```sql
-CREATE DATABASE estoque_provedor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'estoque'@'localhost' IDENTIFIED BY 'estoque123';
-GRANT ALL PRIVILEGES ON estoque_provedor.* TO 'estoque'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
+Não precisa criar banco nem usuário: o PASSO 6 faz isso automaticamente.
+
+> Já tem **XAMPP**? Pode usar o MySQL dele: abra o painel do XAMPP e clique em **Start** no MySQL. No PASSO 6, deixe a senha do root em branco.
 
 ---
 
@@ -71,6 +66,8 @@ git clone https://github.com/Pedro3557/tcc-stock-control.git
 
 ## PASSO 4 — Abrir o PowerShell na pasta do projeto
 
+Abra o PowerShell **normal** — **não** use "Executar como administrador" (como administrador ele começa em `C:\WINDOWS\system32`, que não é lugar para o projeto).
+
 ```powershell
 cd $HOME\Desktop\tcc-stock-control
 ```
@@ -78,41 +75,9 @@ cd $HOME\Desktop\tcc-stock-control
 > Se o seu Windows estiver em outra pasta (ex.: `C:\Users\Joao\Desktop`), ajuste o caminho.
 > Dica: abra a pasta no Explorador de Arquivos, clique na barra de endereço, digite `powershell` e aperte Enter.
 
----
+Confira: a linha do PowerShell deve terminar em `\tcc-stock-control>`.
 
-## PASSO 5 — Subir o MySQL (só para a Opção A — Docker)
-
-Com o Docker Desktop aberto:
-
-```powershell
-docker compose up -d
-```
-
-Confira se está pronto (coluna *STATUS* deve mostrar **healthy** — pode levar 30 segundos):
-
-```powershell
-docker compose ps
-```
-
----
-
-## PASSO 6 — Instalar as dependências
-
-### Back-end
-
-```powershell
-cd backend
-npm install
-```
-
-### Front-end
-
-```powershell
-cd ..\frontend
-npm install
-```
-
-> ⚠️ Se aparecer *"a execução de scripts foi desabilitada neste sistema"*, rode uma vez:
+> ⚠️ Se em algum comando `npm` aparecer *"a execução de scripts foi desabilitada neste sistema"*, rode uma vez:
 >
 > ```powershell
 > Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
@@ -122,68 +87,60 @@ npm install
 
 ---
 
-## PASSO 7 — Criar os arquivos de configuração (.env)
+## PASSO 5 — Instalar as dependências
+
+Ainda na pasta principal do projeto (com o Docker, rode antes o `docker compose up -d`):
 
 ```powershell
-cd ..\backend
-copy .env.example .env
-cd ..\frontend
-copy .env.example .env
+docker compose up -d
 ```
 
-Abra o arquivo `backend\.env` no Bloco de Notas:
+*(Pule a linha acima se você usou o MySQL Installer ou o XAMPP.)*
 
 ```powershell
-notepad ..\backend\.env
+npm install
 ```
 
-- **Docker (Opção A):** não precisa mudar nada nos dados do banco.
-- **MySQL Installer (Opção B):** confira `DB_USER=estoque` e `DB_PASSWORD=estoque123` (os do PASSO 2).
-- **Em ambos:** troque `JWT_SECRET` por uma frase longa e aleatória (ex.: `minha-frase-secreta-do-estoque-2026-xyz`).
-
-Salve e feche. No `frontend\.env`, ajuste `VITE_EMPRESA_NOME` com o nome do provedor (aparece nos PDFs).
+Esse comando instala o back-end e o front-end de uma vez. Pode levar alguns minutos.
 
 ---
 
-## PASSO 8 — Criar as tabelas e os dados iniciais
+## PASSO 6 — Configurar tudo automaticamente
 
 ```powershell
-cd ..\backend
-npm run migrate
-npm run seed
+npm run configurar
 ```
 
-Deve aparecer várias linhas terminando em `migrated`. Isso cria as tabelas, o usuário administrador e alguns produtos de exemplo.
+Esse comando:
 
-> ⚠️ Rode o `npm run seed` **apenas uma vez**. Rodar de novo dá erro de registro duplicado.
+1. cria os arquivos de configuração (`backend\.env` e `frontend\.env`);
+2. confere a conexão com o MySQL e, se precisar, **pede a senha do root do MySQL** e cria sozinho o banco `estoque_provedor` e o usuário `estoque`;
+3. cria as tabelas e os dados iniciais.
+
+Ao digitar a senha aparecem `*` — é normal. Com Docker, normalmente ele nem pergunta.
+
+Deve terminar com **"✔ Tudo pronto!"**. Pode rodar de novo quando quiser: o que já estiver pronto é mantido.
+
+> Opcional: no arquivo `frontend\.env`, ajuste `VITE_EMPRESA_NOME` com o nome do provedor (aparece nos PDFs).
 
 ---
 
-## PASSO 9 — Rodar o sistema
-
-São necessárias **duas janelas** do PowerShell abertas ao mesmo tempo.
-
-**Janela 1 — API (back-end):**
+## PASSO 7 — Rodar o sistema
 
 ```powershell
-cd $HOME\Desktop\tcc-stock-control\backend
 npm run dev
 ```
 
-Espere aparecer: `API de estoque rodando em http://localhost:3333/api`
+Isso liga a API e a tela juntas, na mesma janela. Espere aparecer:
 
-**Janela 2 — Tela (front-end):**
+- `[API] API de estoque rodando em http://localhost:3333/api`
+- `[TELA] Local: http://localhost:5173/`
 
-```powershell
-cd $HOME\Desktop\tcc-stock-control\frontend
-npm run dev
-```
-
-Espere aparecer: `Local: http://localhost:5173/`
+Para parar: aperte **Ctrl + C**.
 
 ---
 
-## PASSO 10 — Acessar
+## PASSO 8 — Acessar
 
 Abra o navegador em **http://localhost:5173**
 
@@ -200,12 +157,17 @@ Outros usuários de teste: `almoxarife@provedor.com` / `almox123` e `consulta@pr
 
 ## Usar todo dia (depois de instalado)
 
-1. Abra o **Docker Desktop** (só na Opção A) e espere "Engine running".
-2. Janela 1: `cd $HOME\Desktop\tcc-stock-control\backend` → `npm run dev`
-3. Janela 2: `cd $HOME\Desktop\tcc-stock-control\frontend` → `npm run dev`
-4. Acesse http://localhost:5173
+1. Ligue o MySQL: abra o **Docker Desktop** (Opção A) ou o **XAMPP**. Com o MySQL Installer ele já liga sozinho.
+2. No PowerShell:
 
-Para parar: aperte **Ctrl + C** em cada janela.
+```powershell
+cd $HOME\Desktop\tcc-stock-control
+npm run dev
+```
+
+3. Acesse http://localhost:5173
+
+Para parar: **Ctrl + C**.
 
 ---
 
@@ -221,7 +183,7 @@ Anote o **Endereço IPv4** do adaptador Wi-Fi (ex.: `192.168.0.10`).
 
 2. Em `frontend\.env`: `VITE_API_URL=http://192.168.0.10:3333/api`
 3. Em `backend\.env`: `CORS_ORIGIN=http://localhost:5173,http://192.168.0.10:5173`
-4. Pare e inicie de novo as duas janelas (PASSO 9).
+4. Pare (Ctrl + C) e rode `npm run dev` de novo.
 5. No celular, acesse `http://192.168.0.10:5173`.
 
 > Se não abrir, o Firewall do Windows pode estar bloqueando: quando aparecer o aviso do Node.js, clique em **Permitir acesso** para *Redes privadas*.
@@ -232,13 +194,17 @@ Anote o **Endereço IPv4** do adaptador Wi-Fi (ex.: `192.168.0.10`).
 
 | Mensagem | Solução |
 |---|---|
-| `Não foi possível conectar ao MySQL` | Docker: abra o Docker Desktop e rode `docker compose up -d`. MySQL Installer: confira se o serviço **MySQL80** está em execução (`services.msc`) e os dados do `backend\.env`. |
-| `port is already allocated` (porta 3306) | Já existe um MySQL instalado. Use a Opção B, ou pare o outro MySQL em `services.msc`. |
+| `'docker' não é reconhecido` | O Docker Desktop não está instalado (ou o PowerShell foi aberto antes de instalar). Instale e reinicie, ou use a Opção B (MySQL Installer). |
+| `a execução de scripts foi desabilitada` | Rode `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, responda **S** e repita o comando. |
+| `ENOENT ... package.json` ou caminho com `system32` | O PowerShell está na pasta errada. Abra um PowerShell **normal** (sem administrador) e faça `cd $HOME\Desktop\tcc-stock-control`. |
+| `Access denied for user 'estoque'` | Rode `npm run configurar` na pasta principal: ele cria o usuário com a senha do root. |
+| `Não foi possível chegar ao MySQL` | O MySQL está desligado. Docker: abra o Docker Desktop e rode `docker compose up -d`. MySQL Installer: inicie o serviço **MySQL80** em `services.msc`. XAMPP: **Start** no MySQL. |
+| `port is already allocated` (porta 3306) | Já existe outro MySQL no computador. Use esse MySQL (Opção B) ou pare-o em `services.msc`. |
 | `EADDRINUSE: 3333` ou `5173` | O sistema já está aberto em outra janela. Feche-a ou aperte Ctrl + C nela. |
-| `Validation error` / registro duplicado no seed | O seed já foi rodado antes — pode ignorar. |
 | Tela fica voltando para o login | Sessão expirou (10 h). Entre de novo. |
-| "Muitas tentativas de login" | Aguarde 15 minutos ou pare e inicie de novo a Janela 1. |
+| "Muitas tentativas de login" | Aguarde 15 minutos ou pare (Ctrl + C) e rode `npm run dev` de novo. |
 | Esqueci a senha do admin | Na pasta `backend`: `npm run redefinir-senha -- admin@provedor.com SenhaTemporaria1`. Entre com ela e crie uma nova. |
+| Esqueci a senha do root do MySQL | A forma mais simples é desinstalar e instalar o MySQL de novo, ou usar o Docker. |
 | Planilha não é aceita na importação | No Excel: **Arquivo → Salvar como → Pasta de Trabalho do Excel (*.xlsx)**. |
 
 ---
@@ -246,7 +212,7 @@ Anote o **Endereço IPv4** do adaptador Wi-Fi (ex.: `192.168.0.10`).
 ## Conferir se está tudo certo (opcional)
 
 ```powershell
-cd $HOME\Desktop\tcc-stock-control\backend
+cd $HOME\Desktop\tcc-stock-control
 npm test
 ```
 
