@@ -7,6 +7,7 @@
  * 3. Roda as migrations e, se o banco estiver vazio, o seed (dados iniciais)
  *
  * Pode ser rodado quantas vezes quiser: o que já estiver pronto é mantido.
+ * Com "npm run configurar -- --demo" também carrega dados de demonstração (só em banco vazio).
  * Sem perguntas (ex.: CI): defina MYSQL_ROOT_USER e MYSQL_ROOT_PASSWORD.
  */
 const fs = require('fs');
@@ -222,6 +223,8 @@ function rodarNoBackend(script) {
   if (r.status !== 0) falhar(`O comando "npm run ${script}" falhou (veja a mensagem acima).`);
 }
 
+const comDemo = process.argv.includes('--demo');
+
 function prepararTabelas() {
   titulo('Tabelas (migrations)');
   rodarNoBackend('migrate');
@@ -229,6 +232,10 @@ function prepararTabelas() {
 
   titulo('Dados iniciais (seed)');
   rodarNoBackend('seed');
+  if (comDemo) {
+    titulo('Dados de demonstração (seed:demo)');
+    rodarNoBackend('seed:demo');
+  }
 }
 
 (async () => {

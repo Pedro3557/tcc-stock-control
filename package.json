@@ -12,7 +12,9 @@
     "dev": "concurrently --kill-others-on-fail --names API,TELA --prefix-colors blue,green \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "test": "npm --prefix backend test",
     "lint": "eslint .",
-    "build": "npm --prefix frontend run build"
+    "build": "npm --prefix frontend run build",
+    "producao:preparar": "npm --prefix frontend run build && npm --prefix backend run migrate",
+    "producao": "node scripts/producao.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

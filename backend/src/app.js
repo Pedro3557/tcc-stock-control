@@ -55,8 +55,8 @@ const pastaFrontend = path.resolve(__dirname, '..', '..', 'frontend', 'dist');
 if (config.servirFrontend) {
   if (fs.existsSync(path.join(pastaFrontend, 'index.html'))) {
     app.use(express.static(pastaFrontend, { index: false, maxAge: '7d', setHeaders: semCacheNoIndex }));
-    // Rotas do React (ex.: /produtos, /e/CODIGO) devolvem o index.html
-    app.get(/^(?!\/api\/).*/, (req, res) => {
+    // Rotas do React (ex.: /produtos, /e/CODIGO) devolvem o index.html; arquivos inexistentes (.js, .png…) dão 404
+    app.get(/^(?!\/api\/)(?!.*\.[a-z0-9]{1,8}$).*/i, (req, res) => {
       res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.join(pastaFrontend, 'index.html'));
     });

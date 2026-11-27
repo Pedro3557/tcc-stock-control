@@ -17,3 +17,4 @@ backups/
 *.pem
 *.key
 *.crt
+logs/

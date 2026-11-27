@@ -4,7 +4,7 @@ const producao = process.env.NODE_ENV === 'production';
 const teste = process.env.NODE_ENV === 'test';
 
 // Em produção o segredo do JWT é obrigatório e precisa ser forte
-if (producao && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+if (producao && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || /troque-este-segredo/i.test(process.env.JWT_SECRET))) {
   console.error('[erro] Defina JWT_SECRET no .env com pelo menos 32 caracteres aleatórios antes de iniciar em produção.');
   console.error('       Dica: rode "npm run configurar" na pasta principal, que gera um segredo automaticamente.');
   process.exit(1);

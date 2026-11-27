@@ -8,7 +8,7 @@ module.exports = [
   { ignores: ['**/node_modules/**', '**/dist/**', 'backend/backups/**'] },
   js.configs.recommended,
   {
-    files: ['backend/**/*.js', 'scripts/**/*.js', 'eslint.config.js'],
+    files: ['backend/**/*.js', 'scripts/**/*.js', 'eslint.config.js', 'ecosystem.config.cjs'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'commonjs', globals: { ...globals.node } },
     rules: {
       'no-unused-vars': ['error', { argsIgnorePattern: '^_|^(req|res|next)$', caughtErrors: 'none' }],
