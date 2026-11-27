@@ -73,9 +73,9 @@ const esperando = [];
 function abrirLeitor() {
   if (leitor) return;
   leitor = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: Boolean(process.stdin.isTTY) });
-  // eslint-disable-next-line no-underscore-dangle
+   
   const escreverOriginal = leitor._writeToOutput.bind(leitor);
-  // eslint-disable-next-line no-underscore-dangle
+   
   leitor._writeToOutput = (s) => {
     if (!ocultar || /[\r\n]/.test(s)) escreverOriginal(s);
     else escreverOriginal('*'.repeat(s.length));
@@ -131,6 +131,7 @@ async function configurarBanco() {
 
   const base = { host: env.DB_HOST || 'localhost', port: Number(env.DB_PORT || 3306) };
   const banco = env.DB_NAME || 'estoque_provedor';
+  const bancoTeste = env.DB_NAME_TEST || `${banco}_teste`;
   const usuario = env.DB_USER || 'estoque';
   const senha = env.DB_PASSWORD || '';
   info(`Servidor ${base.host}:${base.port} · banco "${banco}" · usuário "${usuario}"`);
@@ -194,6 +195,8 @@ async function configurarBanco() {
     await admin.query('CREATE USER IF NOT EXISTS ?@? IDENTIFIED BY ?', [usuario, host, senha]);
     await admin.query('ALTER USER ?@? IDENTIFIED BY ?', [usuario, host, senha]);
     await admin.query(`GRANT ALL PRIVILEGES ON \`${banco}\`.* TO ?@?`, [usuario, host]);
+    // Banco separado usado só pelos testes automatizados (npm test)
+    await admin.query(`GRANT ALL PRIVILEGES ON \`${bancoTeste}\`.* TO ?@?`, [usuario, host]);
   }
   fecharLeitor();
   await admin.query('FLUSH PRIVILEGES');

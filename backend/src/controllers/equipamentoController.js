@@ -4,6 +4,7 @@ const AppError = require('../utils/AppError');
 const { normalizarMac, pareceMac, textoOuNull } = require('../utils/formatos');
 const { lerPaginacao, respostaPaginada } = require('../utils/paginacao');
 const { includesMovimentacao } = require('../services/filtrosMovimentacao');
+const auditoria = require('../services/auditoriaService');
 
 async function listar(req, res) {
   const { busca, status, produtoId, tecnicoId, categoriaId } = req.query;
@@ -87,6 +88,7 @@ async function historico(req, res) {
 async function atualizar(req, res) {
   const equipamento = await Equipamento.findByPk(req.params.id);
   if (!equipamento) throw new AppError('Equipamento não encontrado.', 404);
+  const antes = equipamento.toJSON();
   const dados = {};
   if (req.body.mac !== undefined) dados.mac = normalizarMac(req.body.mac);
   if (req.body.observacao !== undefined) dados.observacao = textoOuNull(req.body.observacao);
@@ -96,6 +98,7 @@ async function atualizar(req, res) {
     dados.numeroSerie = serie.toUpperCase();
   }
   await equipamento.update(dados);
+  await auditoria.registrar({ req, acao: 'atualizar', modulo: 'equipamentos', registroId: equipamento.id, antes, depois: equipamento });
   res.json(equipamento);
 }
 

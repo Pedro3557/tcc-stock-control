@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
       categoriaId: { type: DataTypes.INTEGER, allowNull: false },
       codigo: { type: DataTypes.STRING(40), allowNull: false, unique: true },
       nome: { type: DataTypes.STRING(150), allowNull: false },
+      descricao: { type: DataTypes.TEXT },
       marca: { type: DataTypes.STRING(80) },
       modelo: { type: DataTypes.STRING(80) },
       tipoControle: { type: DataTypes.ENUM(...TIPOS_CONTROLE), allowNull: false },

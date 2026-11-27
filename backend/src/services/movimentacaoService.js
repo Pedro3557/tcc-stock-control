@@ -284,12 +284,12 @@ async function entradaSerializados(d, produto, usuario, t) {
 
   const movimentacoes = [];
   for (const u of unidades) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const equipamento = await Equipamento.create(
       { produtoId: produto.id, numeroSerie: u.numeroSerie, mac: u.mac, status: 'em_estoque' },
       { transaction: t }
     );
-    // eslint-disable-next-line no-await-in-loop
+     
     const mov = await Movimentacao.create(
       {
         produtoId: produto.id,
@@ -443,7 +443,7 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
       alteracoes.observacao = d.observacao;
     }
 
-    // eslint-disable-next-line no-await-in-loop
+     
     await eq.update(alteracoes, { transaction: t });
 
     let quantidade = 1;
@@ -453,7 +453,7 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
       else quantidade = 0;
     }
 
-    // eslint-disable-next-line no-await-in-loop
+     
     const mov = await Movimentacao.create(
       {
         produtoId: eq.produtoId,
@@ -476,7 +476,7 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
   }
 
   for (const produtoId of produtosAfetados) {
-    // eslint-disable-next-line no-await-in-loop
+     
     await recalcularSerializado(produtoId, t);
   }
 

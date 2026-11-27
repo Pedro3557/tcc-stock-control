@@ -9,7 +9,7 @@ function escapar(valor) {
 function gerarCSV(colunas, linhas) {
   const cabecalho = colunas.map((c) => escapar(c.titulo)).join(';');
   const corpo = linhas.map((linha) => colunas.map((c) => escapar(c.valor(linha))).join(';'));
-  return `﻿${[cabecalho, ...corpo].join('\r\n')}\r\n`;
+  return `\uFEFF${[cabecalho, ...corpo].join('\r\n')}\r\n`;
 }
 
 /** Número no padrão brasileiro (vírgula decimal, sem separador de milhar para facilitar planilhas). */

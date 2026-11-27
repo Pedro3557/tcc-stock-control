@@ -12,8 +12,8 @@ async function main() {
     console.error('Uso: npm run redefinir-senha -- <email> <nova-senha>');
     process.exit(1);
   }
-  if (senha.length < 6) {
-    console.error('A senha deve ter pelo menos 6 caracteres.');
+  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) {
+    console.error('A senha deve ter pelo menos 8 caracteres, com letras e números.');
     process.exit(1);
   }
   const usuario = await Usuario.findOne({ where: { email: email.trim().toLowerCase() } });

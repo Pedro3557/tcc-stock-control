@@ -5,7 +5,7 @@ function normalizarMac(valor) {
   if (valor === undefined || valor === null) return null;
   const texto = String(valor).trim();
   if (!texto) return null;
-  const hex = texto.replace(/[\s:.\-]/g, '').toUpperCase();
+  const hex = texto.replace(/[\s:.-]/g, '').toUpperCase();
   if (!/^[0-9A-F]{12}$/.test(hex)) {
     throw new AppError(`MAC inválido: "${texto}". Use 12 dígitos hexadecimais (ex.: AA:BB:CC:DD:EE:FF).`);
   }

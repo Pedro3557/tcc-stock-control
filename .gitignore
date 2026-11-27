@@ -7,3 +7,13 @@ build/
 *.log
 .DS_Store
 coverage/
+
+# Backups do banco (contêm dados da empresa — nunca versionar)
+backups/
+*.sql.gz
+*.sql.gz.sha256
+
+# Certificados HTTPS
+*.pem
+*.key
+*.crt

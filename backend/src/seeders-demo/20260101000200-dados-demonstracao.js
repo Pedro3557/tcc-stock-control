@@ -3,16 +3,19 @@
 const bcrypt = require('bcryptjs');
 
 /**
- * Dados iniciais para começar a usar o sistema:
- * usuários, categorias, produtos típicos de provedor, unidades de ONU/roteador,
+ * DADOS DE DEMONSTRAÇÃO (opcional — para treinamento e testes, NÃO para uso real):
+ * usuários de exemplo, produtos típicos de provedor, unidades de ONU/roteador,
  * dois técnicos, um fornecedor e as movimentações que geram esses saldos.
+ * Rodar com: npm run seed:demo (depois do "npm run seed").
  */
 module.exports = {
   async up(queryInterface) {
-    // Pode rodar de novo sem erro: se já houver usuários, não mexe em nada
-    const [[{ total }]] = await queryInterface.sequelize.query('SELECT COUNT(*) AS total FROM usuarios');
+    // Só carrega em banco sem cadastros operacionais (nunca mistura com dados reais)
+    const [[{ total }]] = await queryInterface.sequelize.query(
+      'SELECT (SELECT COUNT(*) FROM produtos) + (SELECT COUNT(*) FROM tecnicos) + (SELECT COUNT(*) FROM fornecedores) + (SELECT COUNT(*) FROM movimentacoes) AS total'
+    );
     if (Number(total) > 0) {
-      console.log('Dados iniciais já existem — nada a fazer.');
+      console.log('O banco já tem produtos, técnicos, fornecedores ou movimentações — dados de demonstração NÃO carregados.');
       return;
     }
 
@@ -24,18 +27,29 @@ module.exports = {
       return d;
     };
     const ts = { createdAt: agora, updatedAt: agora };
+    const { gerarCodigoEtiqueta } = require('../utils/codigos');
 
-    // ---------------- Usuários ----------------
-    await queryInterface.bulkInsert('usuarios', [
-      { id: 1, nome: 'Administrador', email: 'admin@provedor.com', senhaHash: await bcrypt.hash('admin123', 10), perfil: 'admin', precisaTrocarSenha: true, ativo: true, ...ts },
-      { id: 2, nome: 'Almoxarifado', email: 'almoxarife@provedor.com', senhaHash: await bcrypt.hash('almox123', 10), perfil: 'almoxarife', precisaTrocarSenha: true, ativo: true, ...ts },
-      { id: 3, nome: 'Consulta', email: 'consulta@provedor.com', senhaHash: await bcrypt.hash('consulta123', 10), perfil: 'consulta', precisaTrocarSenha: true, ativo: true, ...ts },
-    ]);
+    // ---------------- Usuários de exemplo (senhas provisórias, troca obrigatória) ----------------
+    const [[admin]] = await queryInterface.sequelize.query("SELECT id FROM usuarios WHERE perfil = 'admin' ORDER BY id LIMIT 1");
+    if (!admin) throw new Error('Rode "npm run seed" antes de "npm run seed:demo".');
+    const adminId = admin.id;
+    for (const [nome, email, senha, perfil] of [
+      ['Almoxarifado (demonstração)', 'almoxarife@provedor.com', 'almox123', 'almoxarife'],
+      ['Consulta (demonstração)', 'consulta@provedor.com', 'consulta123', 'consulta'],
+    ]) {
+      const [[existe]] = await queryInterface.sequelize.query('SELECT id FROM usuarios WHERE email = ?', { replacements: [email] });
+      if (!existe) {
+        await queryInterface.bulkInsert('usuarios', [{
+          nome, email, senhaHash: await bcrypt.hash(senha, 10), perfil, precisaTrocarSenha: true,
+          recebeNotificacoes: perfil !== 'consulta', recebeEmail: false, ativo: true, ...ts,
+        }]);
+      }
+    }
+    const [[almox]] = await queryInterface.sequelize.query("SELECT id FROM usuarios WHERE email = 'almoxarife@provedor.com'");
 
-    // ---------------- Categorias ----------------
-    const categorias = ['ONU/ONT', 'Roteadores', 'Mesh', 'Switches', 'Rádios', 'Módulos SFP', 'Cabos', 'Conectores', 'Splitters', 'Caixas', 'Acessórios', 'Ferramentas'];
-    await queryInterface.bulkInsert('categorias', categorias.map((nome, i) => ({ id: i + 1, nome, ...ts })));
-    const cat = Object.fromEntries(categorias.map((nome, i) => [nome, i + 1]));
+    // ---------------- Categorias (criadas pelo seed essencial) ----------------
+    const [linhasCat] = await queryInterface.sequelize.query('SELECT id, nome FROM categorias');
+    const cat = Object.fromEntries(linhasCat.map((c) => [c.nome, c.id]));
 
     // ---------------- Técnicos e fornecedor ----------------
     await queryInterface.bulkInsert('tecnicos', [
@@ -122,6 +136,7 @@ module.exports = {
         clienteCodigo: e[3] === 'instalado_cliente' ? e[5] : null,
         clienteNome: e[3] === 'instalado_cliente' ? e[6] : null,
         observacao: e[3] === 'defeito' ? 'Não sincroniza na OLT (LOS aceso).' : null,
+        codigoEtiqueta: gerarCodigoEtiqueta(),
         ...ts,
       }))
     );
@@ -132,7 +147,7 @@ module.exports = {
       if (e[3] === 'em_estoque') emEstoque[e[0]] = (emEstoque[e[0]] || 0) + 1;
     });
     for (const [produtoId, qtd] of Object.entries(emEstoque)) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await queryInterface.bulkUpdate('produtos', { quantidade: qtd }, { id: Number(produtoId) });
     }
 
@@ -140,7 +155,7 @@ module.exports = {
     const movs = [];
     const mov = (dados) => movs.push({
       equipamentoId: null, tecnicoId: null, fornecedorId: null, clienteCodigo: null, numeroOS: null,
-      notaFiscal: null, observacao: null, statusAnterior: null, statusNovo: null, usuarioId: 1, ...dados,
+      notaFiscal: null, observacao: null, statusAnterior: null, statusNovo: null, usuarioId: adminId, ...dados,
     });
 
     // Entradas de compra (NF 004512)
@@ -156,13 +171,13 @@ module.exports = {
     // Material de consumo entregue ao técnico Carlos (id 1)
     produtos.forEach((p, i) => {
       if (p[5] === 'quantidade' && p[11]) {
-        mov({ produtoId: i + 1, tipo: 'saida_tecnico', quantidade: p[11], tecnicoId: 1, usuarioId: 2, createdAt: diasAtras(3, 8) });
+        mov({ produtoId: i + 1, tipo: 'saida_tecnico', quantidade: p[11], tecnicoId: 1, usuarioId: almox.id, createdAt: diasAtras(3, 8) });
       }
     });
 
     // Histórico de cada equipamento conforme o status final
     equipamentos.forEach((e, i) => {
-      const base = { produtoId: e[0], equipamentoId: i + 1, quantidade: 1, usuarioId: 2 };
+      const base = { produtoId: e[0], equipamentoId: i + 1, quantidade: 1, usuarioId: almox.id };
       switch (e[3]) {
         case 'com_tecnico':
           mov({ ...base, tipo: 'saida_tecnico', tecnicoId: e[4], statusAnterior: 'em_estoque', statusNovo: 'com_tecnico', createdAt: diasAtras(2, 8) });
@@ -188,12 +203,12 @@ module.exports = {
   },
 
   async down(queryInterface) {
+    // Remove somente os dados de demonstração (mantém admin e categorias)
     await queryInterface.bulkDelete('movimentacoes', null, {});
     await queryInterface.bulkDelete('equipamentos', null, {});
     await queryInterface.bulkDelete('produtos', null, {});
     await queryInterface.bulkDelete('fornecedores', null, {});
     await queryInterface.bulkDelete('tecnicos', null, {});
-    await queryInterface.bulkDelete('categorias', null, {});
-    await queryInterface.bulkDelete('usuarios', null, {});
+    await queryInterface.bulkDelete('usuarios', { email: ['almoxarife@provedor.com', 'consulta@provedor.com'] }, {});
   },
 };

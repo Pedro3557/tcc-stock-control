@@ -2,6 +2,8 @@ const { Op } = require('sequelize');
 const { Tecnico, Equipamento, Produto, sequelize } = require('../models');
 const AppError = require('../utils/AppError');
 const { textoOuNull } = require('../utils/formatos');
+const auditoria = require('../services/auditoriaService');
+
 
 function dadosTecnico(body) {
   return {
@@ -103,6 +105,7 @@ async function estoque(req, res) {
 
 async function criar(req, res) {
   const tecnico = await Tecnico.create({ ...dadosTecnico(req.body), ativo: true });
+  await auditoria.registrar({ req, acao: 'criar', modulo: 'tecnicos', registroId: tecnico.id, depois: tecnico });
   res.status(201).json(tecnico);
 }
 
@@ -111,7 +114,9 @@ async function atualizar(req, res) {
   if (!tecnico) throw new AppError('Técnico não encontrado.', 404);
   const dados = dadosTecnico(req.body);
   if (req.body.ativo !== undefined) dados.ativo = Boolean(req.body.ativo);
+  const antes = tecnico.toJSON();
   await tecnico.update(dados);
+  await auditoria.registrar({ req, acao: 'atualizar', modulo: 'tecnicos', registroId: tecnico.id, antes, depois: tecnico });
   res.json(tecnico);
 }
 
@@ -123,8 +128,10 @@ async function excluir(req, res) {
   if (comEquipamentos > 0 || materiais.length > 0) {
     throw new AppError('O técnico ainda tem equipamentos ou materiais em mãos. Registre a devolução ou baixa antes de inativá-lo.');
   }
+  const antes = tecnico.toJSON();
   // Exclusão lógica para manter o histórico
   await tecnico.update({ ativo: false });
+  await auditoria.registrar({ req, acao: 'inativar', modulo: 'tecnicos', registroId: tecnico.id, antes, depois: tecnico });
   res.status(204).end();
 }
 

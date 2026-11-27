@@ -2,15 +2,17 @@ const { Op } = require('sequelize');
 const { Produto, Categoria, Movimentacao, Equipamento, sequelize } = require('../models');
 const AppError = require('../utils/AppError');
 const { textoOuNull } = require('../utils/formatos');
+const auditoria = require('../services/auditoriaService');
+const notificacoes = require('../services/notificacaoService');
 
-const CAMPOS_EDITAVEIS = ['categoriaId', 'codigo', 'nome', 'marca', 'modelo', 'tipoControle', 'unidade', 'local', 'estoqueMinimo', 'custoUnitario'];
+const CAMPOS_EDITAVEIS = ['categoriaId', 'codigo', 'nome', 'descricao', 'marca', 'modelo', 'tipoControle', 'unidade', 'local', 'estoqueMinimo', 'custoUnitario'];
 
 function montarDados(body) {
   const dados = {};
   CAMPOS_EDITAVEIS.forEach((campo) => {
     if (body[campo] !== undefined) dados[campo] = typeof body[campo] === 'string' ? body[campo].trim() : body[campo];
   });
-  ['marca', 'modelo', 'local'].forEach((c) => {
+  ['descricao', 'marca', 'modelo', 'local'].forEach((c) => {
     if (c in dados) dados[c] = textoOuNull(dados[c]);
   });
   if (dados.codigo) dados.codigo = dados.codigo.toUpperCase();
@@ -31,6 +33,7 @@ async function listar(req, res) {
       { nome: { [Op.like]: termo } },
       { marca: { [Op.like]: termo } },
       { modelo: { [Op.like]: termo } },
+      { descricao: { [Op.like]: termo } },
     ];
   }
   if (abaixoMinimo === 'true') {
@@ -69,12 +72,14 @@ async function criar(req, res) {
   const dados = montarDados(req.body);
   // O saldo inicial sempre começa em zero: entradas são feitas por movimentação (gera histórico)
   const produto = await Produto.create({ ...dados, quantidade: 0, ativo: true });
+  await auditoria.registrar({ req, acao: 'criar', modulo: 'produtos', registroId: produto.id, depois: produto });
   res.status(201).json(produto);
 }
 
 async function atualizar(req, res) {
   const produto = await Produto.findByPk(req.params.id);
   if (!produto) throw new AppError('Produto não encontrado.', 404);
+  const antes = produto.toJSON();
 
   const dados = montarDados(req.body);
   if (dados.categoriaId) {
@@ -94,14 +99,20 @@ async function atualizar(req, res) {
 
   if (req.body.ativo !== undefined) dados.ativo = Boolean(req.body.ativo);
   await produto.update(dados);
+  await auditoria.registrar({ req, acao: 'atualizar', modulo: 'produtos', registroId: produto.id, antes, depois: produto });
+  // Mudança de estoque mínimo ou reativação pode criar/encerrar alertas
+  await notificacoes.verificarEstoque([produto.id]);
   res.json(produto);
 }
 
 async function excluir(req, res) {
   const produto = await Produto.findByPk(req.params.id);
   if (!produto) throw new AppError('Produto não encontrado.', 404);
+  const antes = produto.toJSON();
   // Exclusão lógica: mantém o histórico de movimentações
   await produto.update({ ativo: false });
+  await auditoria.registrar({ req, acao: 'inativar', modulo: 'produtos', registroId: produto.id, antes, depois: produto });
+  await notificacoes.verificarEstoque([produto.id]);
   res.status(204).end();
 }
 

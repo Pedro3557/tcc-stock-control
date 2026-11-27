@@ -19,8 +19,14 @@ const base = {
   },
 };
 
+// Testes usam SEMPRE um banco separado (padrão: <DB_NAME>_teste), nunca o banco de trabalho
+const bancoTeste = process.env.DB_NAME_TEST || `${base.database}_teste`;
+if (bancoTeste === base.database) {
+  throw new Error('DB_NAME_TEST não pode ser igual a DB_NAME: os testes apagam e recriam o banco de testes.');
+}
+
 module.exports = {
   development: base,
-  test: base,
+  test: { ...base, database: bancoTeste },
   production: base,
 };

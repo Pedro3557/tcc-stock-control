@@ -22,6 +22,10 @@ async function autenticar(req, res, next) {
     if (!usuario || !usuario.ativo) {
       throw new AppError('Usuário inativo ou inexistente. Faça login novamente.', 401);
     }
+    // Senha trocada depois da emissão do token: a sessão antiga deixa de valer
+    if (usuario.senhaAlteradaEm && payload.iat * 1000 < new Date(usuario.senhaAlteradaEm).getTime() - 1000) {
+      throw new AppError('Sua senha foi alterada. Faça login novamente.', 401);
+    }
 
     req.usuario = usuario;
     return next();

@@ -11,11 +11,15 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "migrate": "sequelize-cli db:migrate",
-    "migrate:undo": "sequelize-cli db:migrate:undo:all",
     "seed": "sequelize-cli db:seed:all",
-    "seed:undo": "sequelize-cli db:seed:undo:all",
-    "test": "node --test tests/regras.test.js",
-    "redefinir-senha": "node scripts/redefinir-senha.js"
+    "seed:undo": "echo \"Use npm run seed:demo:undo para remover os dados de demonstração.\"",
+    "test": "node tests/executar.js",
+    "redefinir-senha": "node scripts/redefinir-senha.js",
+    "seed:demo": "sequelize-cli db:seed:all --seeders-path src/seeders-demo",
+    "seed:demo:undo": "sequelize-cli db:seed:undo:all --seeders-path src/seeders-demo",
+    "test:unidade": "node --test tests/regras.test.js",
+    "backup": "node scripts/backup.js",
+    "migrate:desfazer": "sequelize-cli db:migrate:undo"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -25,13 +29,18 @@
     "express": "^4.21.2",
     "express-rate-limit": "^8.7.5",
     "express-validator": "^7.2.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.5.0",
     "mysql2": "^3.11.5",
+    "nodemailer": "^6.10.1",
     "sequelize": "^6.37.5"
   },
   "devDependencies": {
+    "jsqr": "^1.4.0",
     "nodemon": "^3.1.9",
-    "sequelize-cli": "^6.6.2"
+    "qrcode": "^1.5.4",
+    "sequelize-cli": "^6.6.2",
+    "supertest": "^7.3.2"
   }
 }

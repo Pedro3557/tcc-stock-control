@@ -1,9 +1,12 @@
 const { STATUS_EQUIPAMENTO } = require('../config/constantes');
+const { gerarCodigoEtiqueta } = require('../utils/codigos');
 
 module.exports = (sequelize, DataTypes) => {
   const Equipamento = sequelize.define(
     'Equipamento',
     {
+      // Identificador permanente usado no QR Code da etiqueta (não contém dados do equipamento)
+      codigoEtiqueta: { type: DataTypes.STRING(16), allowNull: false, unique: true, defaultValue: gerarCodigoEtiqueta },
       produtoId: { type: DataTypes.INTEGER, allowNull: false },
       numeroSerie: { type: DataTypes.STRING(80), allowNull: false, unique: true },
       mac: { type: DataTypes.STRING(17), allowNull: true, unique: true },

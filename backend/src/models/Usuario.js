@@ -7,8 +7,11 @@ module.exports = (sequelize, DataTypes) => {
       nome: { type: DataTypes.STRING(120), allowNull: false },
       email: { type: DataTypes.STRING(160), allowNull: false, unique: true },
       senhaHash: { type: DataTypes.STRING(100), allowNull: false },
+      senhaAlteradaEm: { type: DataTypes.DATE, allowNull: true },
       perfil: { type: DataTypes.ENUM(...PERFIS), allowNull: false, defaultValue: 'consulta' },
       precisaTrocarSenha: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+      recebeNotificacoes: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+      recebeEmail: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       ativo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     },
     {
@@ -21,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
   Usuario.prototype.toJSON = function toJSON() {
     const valores = { ...this.get() };
     delete valores.senhaHash;
+    delete valores.senhaAlteradaEm;
     return valores;
   };
 
