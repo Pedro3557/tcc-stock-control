@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { obterOrganizacao } from '../services/organizacao.js';
 import { Link, useParams } from 'react-router-dom';
 import { api, mensagemErro } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -15,6 +16,11 @@ export default function TecnicoEstoque() {
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
 
+  async function gerarTermo() {
+    const [{ pdfTermoTecnico }, organizacao] = await Promise.all([import('../services/pdf.js'), obterOrganizacao()]);
+    pdfTermoTecnico({ dados, usuario: usuario?.nome, organizacao });
+  }
+
   useEffect(() => {
     api.get(`/tecnicos/${id}/estoque`).then(({ data }) => setDados(data)).catch((e) => setErro(mensagemErro(e)));
   }, [id]);
@@ -29,7 +35,7 @@ export default function TecnicoEstoque() {
     <>
       <Link to="/tecnicos" className="link-voltar"><Icone nome="voltar" tamanho={16} /> Técnicos</Link>
       <Cabecalho titulo={tecnico.nome} subtitulo={[tecnico.equipe, tecnico.telefone].filter(Boolean).join(' · ') || 'Técnico'}>
-        <button type="button" className="botao" onClick={async () => (await import('../services/pdf.js')).pdfTermoTecnico({ dados, usuario: usuario?.nome })}>
+        <button type="button" className="botao" onClick={gerarTermo}>
           <Icone nome="pdf" tamanho={16} /> Termo (PDF)
         </button>
         <Link to={`/movimentacoes?tecnicoId=${tecnico.id}`} className="botao">Histórico</Link>

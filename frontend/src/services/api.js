@@ -3,7 +3,8 @@ import axios from 'axios';
 const CHAVE_TOKEN = 'estoque_token';
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3333/api',
+  // Padrão: mesma origem (/api). Em desenvolvimento o Vite repassa /api para a API (ver vite.config.js).
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
 });
 

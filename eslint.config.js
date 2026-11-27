@@ -15,7 +15,11 @@ module.exports = [
     },
   },
   {
-    files: ['frontend/**/*.{js,jsx}'],
+    files: ['frontend/vite.config.js'],
+    languageOptions: { sourceType: 'module', globals: { ...globals.node } },
+  },
+  {
+    files: ['frontend/src/**/*.{js,jsx}'],
     plugins: { react, 'react-hooks': reactHooks },
     languageOptions: {
       ecmaVersion: 2023,
