@@ -121,7 +121,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ---------------- Cabeçalho de página ---------------- */
 .cabecalho { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .cabecalho p { margin-top: 4px; }
-.cabecalho-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.cabecalho-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .link-voltar { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-2); text-decoration: none; font-size: 0.9rem; margin-bottom: 10px; }
 .link-voltar:hover { color: var(--texto); }
 .secao-titulo { margin: 28px 0 12px; }
@@ -540,3 +540,27 @@ select:disabled { background: var(--superficie-2); color: var(--texto-2); }
 .cabecalho-secao { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .col-check { width: 40px; }
 .linha-clicavel { cursor: pointer; }
+
+/* ---------------- Inventário ---------------- */
+.badge-inv-em_contagem { border-color: var(--texto); }
+.badge-inv-em_revisao { border-style: dashed; border-color: var(--texto-2); }
+.badge-inv-concluido { background: var(--preto); border-color: var(--preto); color: #fff; }
+.badge-inv-cancelado { color: var(--texto-3); text-decoration: line-through; }
+.indicador-texto { font-size: 1.05rem !important; }
+.barra-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+.inventario-leitor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-top: 16px; align-items: start; }
+.campo-contagem { width: 110px; text-align: right; min-height: 36px; padding: 6px 8px; }
+.selecao { border: 1px solid var(--borda); border-radius: var(--raio-p); padding: 10px 12px; margin: 0; display: grid; gap: 8px; }
+.selecao-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 12px; }
+.selecao-lista { grid-template-columns: 1fr; max-height: 200px; overflow-y: auto; }
+.divergencias { display: grid; gap: 10px; }
+.divergencia { display: grid; gap: 10px; padding: 14px 16px; border-color: var(--alerta-borda); }
+.divergencia-titulo { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.divergencia-titulo span { color: var(--texto-2); font-size: 0.9rem; }
+.divergencia-campos { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.divergencia-campos .campo { width: 200px; }
+.divergencia-campos .divergencia-justificativa { flex: 1; min-width: 240px; width: auto; }
+@media (max-width: 900px) {
+  .inventario-leitor { grid-template-columns: minmax(0, 1fr); }
+  .divergencia-campos .campo { width: 100%; }
+}

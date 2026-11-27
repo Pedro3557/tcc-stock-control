@@ -109,6 +109,22 @@ const filtrosMovimentacao = [
   query('equipamentoId').optional().isInt({ min: 1 }).withMessage('Equipamento inválido.'),
 ];
 
+const inventario = [
+  body('descricao').optional({ values: 'falsy' }).isString().isLength({ max: 150 }).withMessage('Descrição muito longa (máx. 150).'),
+  body('categoriaIds').optional().isArray().withMessage('Categorias inválidas.'),
+  body('produtoIds').optional().isArray().withMessage('Produtos inválidos.'),
+  body('observacao').optional({ values: 'null' }).isString().isLength({ max: 2000 }),
+];
+const contagem = [
+  body('produtoId').isInt({ min: 1 }).withMessage('Produto inválido.'),
+];
+const leitura = [
+  body('valor').isString().withMessage('Informe o código lido.').bail().trim().notEmpty().withMessage('Informe o código lido.'),
+];
+const decisoes = [
+  body('decisoes').isArray({ min: 1 }).withMessage('Envie ao menos uma decisão.'),
+];
+
 const configuracoes = [
   body('valores').isObject().withMessage('Envie as configurações no campo "valores".'),
 ];
@@ -142,6 +158,10 @@ module.exports = {
   filtrosMovimentacao,
   filtrosEquipamento,
   configuracoes,
+  inventario,
+  contagem,
+  leitura,
+  decisoes,
   filtrosAuditoria,
   restauracao,
 };

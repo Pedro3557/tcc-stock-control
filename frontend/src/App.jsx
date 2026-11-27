@@ -20,6 +20,8 @@ import NaoEncontrado from './pages/NaoEncontrado.jsx';
 import Leitor from './pages/Leitor.jsx';
 import AbrirEtiqueta from './pages/AbrirEtiqueta.jsx';
 import Etiquetas from './pages/Etiquetas.jsx';
+import Inventarios from './pages/Inventarios.jsx';
+import InventarioDetalhe from './pages/InventarioDetalhe.jsx';
 
 export default function App() {
   return (
@@ -33,6 +35,8 @@ export default function App() {
         <Route path="equipamentos/:id" element={<EquipamentoDetalhe />} />
         <Route path="ler" element={<Leitor />} />
         <Route path="e/:codigo" element={<AbrirEtiqueta />} />
+        <Route path="inventarios" element={<Inventarios />} />
+        <Route path="inventarios/:id" element={<InventarioDetalhe />} />
         <Route path="etiquetas" element={<RotaProtegida perfis={['admin', 'almoxarife']}><Etiquetas /></RotaProtegida>} />
         <Route
           path="movimentacoes/nova"

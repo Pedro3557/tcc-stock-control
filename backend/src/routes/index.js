@@ -20,6 +20,7 @@ const notificacoesCtrl = require('../controllers/notificacaoController');
 const auditoriaCtrl = require('../controllers/auditoriaController');
 const configuracoesCtrl = require('../controllers/configuracaoController');
 const backupsCtrl = require('../controllers/backupController');
+const inventariosCtrl = require('../controllers/inventarioController');
 const { uploadPlanilha } = require('../middlewares/upload');
 const backupService = require('../services/backupService');
 
@@ -90,6 +91,21 @@ router.get('/relatorios/dados', validar(v.filtrosMovimentacao), a(relatorios.dad
 router.get('/importacao/modelo/:tipo', ESCRITA, a(importacao.modelo));
 router.post('/importacao/produtos', ESCRITA, uploadPlanilha, a(importacao.produtos));
 router.post('/importacao/entrada', ESCRITA, uploadPlanilha, a(importacao.entrada));
+
+// Inventário físico: consulta para todos; contagem por admin/almoxarife; aprovação dos ajustes só admin
+router.get('/inventarios', a(inventariosCtrl.listar));
+router.post('/inventarios', ESCRITA, validar(v.inventario), a(inventariosCtrl.criar));
+router.get('/inventarios/:id', validar(v.id), a(inventariosCtrl.obter));
+router.get('/inventarios/:id/exportar', validar(v.id), a(inventariosCtrl.exportar));
+router.get('/inventarios/:id/relatorio', validar(v.id), a(inventariosCtrl.relatorio));
+router.post('/inventarios/:id/contagens', ESCRITA, validar([...v.id, ...v.contagem]), a(inventariosCtrl.contar));
+router.post('/inventarios/:id/leituras', ESCRITA, validar([...v.id, ...v.leitura]), a(inventariosCtrl.ler));
+router.delete('/inventarios/:id/leituras/:linhaId', ESCRITA, validar(v.id), a(inventariosCtrl.desfazerLeitura));
+router.post('/inventarios/:id/finalizar', ESCRITA, validar(v.id), a(inventariosCtrl.finalizar));
+router.post('/inventarios/:id/reabrir', ESCRITA, validar(v.id), a(inventariosCtrl.reabrir));
+router.put('/inventarios/:id/decisoes', ESCRITA, validar([...v.id, ...v.decisoes]), a(inventariosCtrl.decidir));
+router.post('/inventarios/:id/aprovar', ADMIN, validar(v.id), a(inventariosCtrl.aprovar));
+router.post('/inventarios/:id/cancelar', ESCRITA, validar(v.id), a(inventariosCtrl.cancelar));
 
 // Notificações do usuário logado
 router.get('/notificacoes', a(notificacoesCtrl.listar));
