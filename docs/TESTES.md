@@ -53,7 +53,8 @@ Executado em 27/11/2026, Node.js 22, MySQL 8.0.46, banco `estoque_provedor_teste
 
 | Verificação | Resultado |
 |---|---|
-| `npm test` | **49/49 testes aprovados** (~22 s) |
+| `npm test` (Linux, MySQL 8.0.46) | **49/49 testes aprovados** (~22 s) |
+| `npm test` (Windows, MySQL 8 instalado pelo MySQL Installer) | **49/49 testes aprovados** (~49 s) |
 | `npm run lint` | sem erros nem avisos |
 | `npm run build` | build concluído (`frontend/dist`) |
 
