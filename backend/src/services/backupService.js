@@ -52,7 +52,7 @@ function novaConexao() {
     bigNumberStrings: true,
     decimalNumbers: false,
     multipleStatements: false,
-    typeCast: (campo, proximo) => (campo.type === 'JSON' ? campo.string() : proximo()),
+    typeCast: (campo, proximo) => (campo.type === 'JSON' ? campo.string('utf8') : proximo()),
   });
 }
 
@@ -238,11 +238,13 @@ async function verificar(id) {
 /** Executa os comandos do arquivo. tabelasIgnoradas: tabelas mantidas como estão no banco atual. */
 async function executarArquivo(caminho, tabelasIgnoradas = []) {
   const conexao = novaConexao();
-  const leitor = readline.createInterface({ input: fs.createReadStream(caminho).pipe(zlib.createGunzip()), crlfDelay: Infinity });
   let tabelaAtual = null;
   try {
     await consultar(conexao, 'SET FOREIGN_KEY_CHECKS = 0');
     await consultar(conexao, 'SET UNIQUE_CHECKS = 0');
+    // O leitor é criado só aqui, logo antes do laço: se fosse criado antes dos "await" acima, um arquivo
+    // pequeno terminaria de ser lido antes do laço começar e o "for await" nunca receberia o fim.
+    const leitor = readline.createInterface({ input: fs.createReadStream(caminho).pipe(zlib.createGunzip()), crlfDelay: Infinity });
     for await (const linha of leitor) {
       if (linha.startsWith('-- TABELA ')) {
         tabelaAtual = linha.slice(10).trim();
@@ -420,6 +422,14 @@ async function executarSePendente() {
   }
 }
 
+/** Backups que ficaram "em andamento" porque o servidor parou no meio são marcados como falha. */
+async function marcarInterrompidos() {
+  await Backup.update(
+    { situacao: 'falha', erro: 'Interrompido: o servidor foi reiniciado durante o backup.', concluidoEm: new Date() },
+    { where: { situacao: 'em_andamento' } }
+  );
+}
+
 async function listar({ pagina = 1, limite = 30 } = {}) {
   const { rows, count } = await Backup.findAndCountAll({
     include: [{ association: 'usuario', attributes: ['id', 'nome'] }],
@@ -447,6 +457,7 @@ module.exports = {
   aplicarRetencao,
   backupAutomaticoPendente,
   executarSePendente,
+  marcarInterrompidos,
   listar,
   caminhoParaDownload,
   pastaBackups,

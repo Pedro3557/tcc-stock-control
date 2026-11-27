@@ -13,6 +13,7 @@ const timers = [];
 function iniciar() {
   if (timers.length) return;
   const seguro = (fn) => () => fn().catch((erro) => console.error('[agendador]', erro.message));
+  seguro(backups.marcarInterrompidos)();
   timers.push(setInterval(seguro(backups.executarSePendente), 60 * 1000));
   timers.push(setInterval(seguro(() => notificacoes.verificarEstoque()), 15 * 60 * 1000));
   timers.push(setInterval(seguro(notificacoes.limparAntigas), 24 * 60 * 60 * 1000));

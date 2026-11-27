@@ -564,3 +564,20 @@ select:disabled { background: var(--superficie-2); color: var(--texto-2); }
   .inventario-leitor { grid-template-columns: minmax(0, 1fr); }
   .divergencia-campos .campo { width: 100%; }
 }
+
+/* ---------------- Notificações ---------------- */
+.notificacao { align-items: flex-start; }
+.notificacao > div:first-child { display: grid; gap: 2px; }
+.notificacao p { font-size: 0.9rem; }
+.notificacao-nivel { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-2); }
+.notificacao.nao-lida { box-shadow: inset 3px 0 0 var(--preto); background: #fcfcfc; }
+.notificacao.nao-lida.nivel-critico { box-shadow: inset 3px 0 0 var(--alerta); }
+.notificacao.nivel-critico .notificacao-nivel { color: var(--alerta); }
+.notificacao.lida strong { font-weight: 500; color: var(--texto-2); }
+.notificacao-acoes { display: flex; gap: 6px; flex-wrap: wrap; flex: none; }
+
+/* ---------------- Administração ---------------- */
+.auditoria-detalhe { max-width: 320px; font-size: 0.86rem; }
+.auditoria-json pre { background: var(--superficie-2); border-radius: var(--raio-p); padding: 10px; font-size: 0.78rem; max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.tabela-compacta td, .tabela-compacta th { padding: 6px 10px; font-size: 0.84rem; word-break: break-word; }
+.formulario > .cartao + .cartao { margin-top: 0; }
