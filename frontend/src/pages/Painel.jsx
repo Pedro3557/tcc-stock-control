@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, mensagemErro } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { formatarMoeda, formatarQtd, formatarDataHora, TIPOS } from '../services/formatos.js';
+import { formatarMoeda, formatarQtd, formatarDataHora, hojeISO, TIPOS } from '../services/formatos.js';
+import Campo from '../components/Campo.jsx';
 import Cabecalho from '../components/Cabecalho.jsx';
 import Carregando from '../components/Carregando.jsx';
 import Vazio from '../components/Vazio.jsx';
@@ -22,15 +23,34 @@ function Indicador({ rotulo, valor, detalhe, alerta, para }) {
   return para ? <Link to={para} className={`${classe} indicador-link`}>{conteudo}</Link> : <div className={classe}>{conteudo}</div>;
 }
 
+const PERIODOS = {
+  7: 'Últimos 7 dias',
+  14: 'Últimos 14 dias',
+  30: 'Últimos 30 dias',
+  90: 'Últimos 90 dias',
+  365: 'Últimos 12 meses',
+  personalizado: 'Personalizado',
+};
+
+const dataBR = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '');
+
 export default function Painel() {
   const { podeMovimentar } = useAuth();
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
+  const [preset, setPreset] = useState('14');
+  const [periodo, setPeriodo] = useState({ inicio: hojeISO(-13), fim: hojeISO() });
+
+  function escolherPreset(valor) {
+    setPreset(valor);
+    if (valor !== 'personalizado') setPeriodo({ inicio: hojeISO(-(Number(valor) - 1)), fim: hojeISO() });
+  }
 
   const carregar = useCallback(() => {
     setErro('');
-    api.get('/dashboard').then(({ data }) => setDados(data)).catch((e) => setErro(mensagemErro(e)));
-  }, []);
+    if (!periodo.inicio || !periodo.fim) return;
+    api.get('/dashboard', { params: periodo }).then(({ data }) => setDados(data)).catch((e) => setErro(mensagemErro(e)));
+  }, [periodo]);
 
   useEffect(carregar, [carregar]);
 
@@ -49,6 +69,19 @@ export default function Painel() {
   return (
     <>
       <Cabecalho titulo="Painel" subtitulo="Visão geral do almoxarifado">
+        <div className="periodo-painel">
+          <Campo rotulo="Período">
+            <select value={preset} onChange={(e) => escolherPreset(e.target.value)}>
+              {Object.entries(PERIODOS).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+            </select>
+          </Campo>
+          {preset === 'personalizado' && (
+            <>
+              <Campo rotulo="De"><input type="date" value={periodo.inicio} max={periodo.fim} onChange={(e) => setPeriodo({ ...periodo, inicio: e.target.value })} /></Campo>
+              <Campo rotulo="Até"><input type="date" value={periodo.fim} min={periodo.inicio} onChange={(e) => setPeriodo({ ...periodo, fim: e.target.value })} /></Campo>
+            </>
+          )}
+        </div>
         {podeMovimentar && (
           <Link to="/movimentacoes/nova" className="botao botao-primario so-desktop">
             <Icone nome="mais" tamanho={16} /> Nova movimentação
@@ -57,7 +90,8 @@ export default function Painel() {
       </Cabecalho>
 
       <div className="indicadores">
-        <Indicador rotulo="Valor total do estoque" valor={formatarMoeda(dados.valorTotalEstoque)} detalhe={`${dados.totalProdutos} produtos ativos`} />
+        <Indicador rotulo="Produtos cadastrados" valor={dados.totalProdutos} detalhe="ativos" para="/produtos" />
+        <Indicador rotulo="Valor total do estoque" valor={formatarMoeda(dados.valorTotalEstoque)} detalhe="custo × saldo em estoque" />
         <Indicador rotulo="Itens abaixo do mínimo" valor={dados.itensAbaixoMinimo} alerta={dados.itensAbaixoMinimo > 0} detalhe="precisam de reposição" para="/produtos?abaixoMinimo=true" />
         <Indicador rotulo="ONUs disponíveis" valor={dados.onusDisponiveis} detalhe="em estoque" para="/equipamentos?status=em_estoque" />
         <Indicador rotulo="Roteadores disponíveis" valor={dados.roteadoresDisponiveis} detalhe="inclui mesh" para="/equipamentos?status=em_estoque" />
@@ -70,12 +104,27 @@ export default function Painel() {
           detalhe={`${eq.comTecnico} equip. · ${mt.itens} materiais`}
           para="/tecnicos"
         />
-        <Indicador rotulo="Movimentações hoje" valor={dados.movimentacoesHoje} para="/movimentacoes" />
-        <Indicador rotulo="Equipamentos em estoque" valor={dados.totalEquipamentosEmEstoque} detalhe={`${formatarQtd(dados.totalUnidadesMaterial)} unid./m de material`} />
+        <Indicador
+          rotulo="Entradas × saídas no período"
+          valor={`${dados.periodo.entradas} × ${dados.periodo.saidas}`}
+          detalhe={`${dataBR(dados.periodo.inicio)} a ${dataBR(dados.periodo.fim)} · hoje: ${dados.movimentacoesHoje}`}
+          para={`/movimentacoes?inicio=${dados.periodo.inicio}&fim=${dados.periodo.fim}`}
+        />
+        <Indicador rotulo="Equipamentos disponíveis" valor={dados.totalEquipamentosEmEstoque} detalhe="unidades serializadas em estoque" para="/equipamentos?status=em_estoque" />
+        <Indicador
+          rotulo="Materiais disponíveis"
+          valor={dados.materiaisDisponiveis.itens}
+          detalhe={`itens com saldo · ${formatarMoeda(dados.materiaisDisponiveis.valor)}`}
+          para="/produtos?tipoControle=quantidade"
+        />
       </div>
 
       <div className="grade-2">
-        <GraficoMovimentacoes dados={dados.movimentacoesPorDia} />
+        <GraficoMovimentacoes
+          dados={dados.movimentacoesPorDia}
+          agrupamento={dados.periodo.agrupamento}
+          descricaoPeriodo={preset === 'personalizado' ? `${dataBR(dados.periodo.inicio)} a ${dataBR(dados.periodo.fim)}` : PERIODOS[preset]}
+        />
         <GraficoStatus equipamentos={eq} />
       </div>
 

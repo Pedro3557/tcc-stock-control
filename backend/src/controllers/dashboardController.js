@@ -1,6 +1,7 @@
 const { sequelize, Movimentacao } = require('../models');
 const { materiaisComTecnicos } = require('./tecnicoController');
 const { includesMovimentacao } = require('../services/filtrosMovimentacao');
+const AppError = require('../utils/AppError');
 
 const q = (sql, replacements = {}) => sequelize.query(sql, { replacements, type: sequelize.QueryTypes.SELECT });
 
@@ -12,40 +13,71 @@ function inicioDoDiaBrasilia() {
 const TIPOS_ENTRADA = ['entrada_compra', 'devolucao_tecnico', 'retirada_cliente', 'retorno_manutencao'];
 const TIPOS_SAIDA = ['saida_tecnico', 'instalacao_cliente', 'envio_manutencao', 'baixa'];
 
-/**
- * Registros de entrada e saída por dia (horário de Brasília) nos últimos N dias, com zeros nos dias sem movimento.
- * Cada unidade serializada conta como um registro. Ajustes de inventário ficam de fora.
- */
-async function serieMovimentacoes(dias) {
-  const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-  const inicio = new Date(`${hoje}T00:00:00-03:00`);
-  inicio.setDate(inicio.getDate() - (dias - 1));
+const hojeBrasilia = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+const diaISO = (d) => d.toISOString().slice(0, 10);
+const MAX_DIAS = 366;
 
+/** Período do painel (AAAA-MM-DD). Padrão: últimos 14 dias. */
+function lerPeriodo(query) {
+  const valido = (t) => /^\d{4}-\d{2}-\d{2}$/.test(t || '') && !Number.isNaN(new Date(`${t}T12:00:00Z`).getTime());
+  const fim = valido(query.fim) ? query.fim : hojeBrasilia();
+  let inicio = valido(query.inicio) ? query.inicio : null;
+  if (!inicio) {
+    const d = new Date(`${fim}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 13);
+    inicio = diaISO(d);
+  }
+  if (inicio > fim) throw new AppError('A data inicial do período não pode ser depois da final.');
+  const dias = Math.round((new Date(`${fim}T12:00:00Z`) - new Date(`${inicio}T12:00:00Z`)) / 86400000) + 1;
+  if (dias > MAX_DIAS) throw new AppError(`O período do painel pode ter no máximo ${MAX_DIAS} dias.`);
+  return { inicio, fim, dias };
+}
+
+/**
+ * Registros de entrada e saída por dia (horário de Brasília) no período, com zeros nos dias sem movimento.
+ * Cada unidade serializada conta como um registro. Ajustes de inventário ficam de fora.
+ * Períodos acima de 92 dias são agrupados por mês.
+ */
+async function serieMovimentacoes({ inicio, fim, dias }) {
+  const porMes = dias > 92;
   const linhas = await q(
-    `SELECT DATE_FORMAT(createdAt, '%Y-%m-%d') AS dia,
+    `SELECT DATE_FORMAT(createdAt, :formato) AS dia,
             SUM(tipo IN (:entradas)) AS entradas,
             SUM(tipo IN (:saidas)) AS saidas
        FROM movimentacoes
-      WHERE createdAt >= :inicio
+      WHERE createdAt >= :de AND createdAt <= :ate
       GROUP BY dia`,
-    { inicio, entradas: TIPOS_ENTRADA, saidas: TIPOS_SAIDA }
+    {
+      formato: porMes ? '%Y-%m' : '%Y-%m-%d',
+      de: new Date(`${inicio}T00:00:00-03:00`),
+      ate: new Date(`${fim}T23:59:59.999-03:00`),
+      entradas: TIPOS_ENTRADA,
+      saidas: TIPOS_SAIDA,
+    }
   );
 
   const serie = [];
-  for (let i = 0; i < dias; i += 1) {
-    const d = new Date(inicio.getTime() + i * 86400000);
-    const dia = d.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-    const linha = linhas.find((l) => l.dia === dia);
-    serie.push({ dia, entradas: Number(linha?.entradas || 0), saidas: Number(linha?.saidas || 0) });
+  const cursor = new Date(`${inicio}T12:00:00Z`);
+  const ultimo = new Date(`${fim}T12:00:00Z`);
+  while (cursor <= ultimo) {
+    const chave = porMes ? diaISO(cursor).slice(0, 7) : diaISO(cursor);
+    if (!serie.length || serie[serie.length - 1].dia !== chave) {
+      const linha = linhas.find((l) => l.dia === chave);
+      serie.push({ dia: chave, entradas: Number(linha?.entradas || 0), saidas: Number(linha?.saidas || 0) });
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
-  return serie;
+  return { serie, agrupamento: porMes ? 'mes' : 'dia' };
 }
 
 async function resumo(req, res) {
+  const periodo = lerPeriodo(req.query);
   const [[totais], abaixoMinimo, statusEquip, disponiveisPorCategoria, materiais, [movDia]] = await Promise.all([
     q(`SELECT COUNT(*) AS produtos,
               COALESCE(SUM(CASE WHEN tipoControle = 'quantidade' THEN quantidade ELSE 0 END), 0) AS unidadesMaterial,
-              COALESCE(SUM(quantidade * custoUnitario), 0) AS valorEstoque
+              COALESCE(SUM(quantidade * custoUnitario), 0) AS valorEstoque,
+              COALESCE(SUM(tipoControle = 'quantidade' AND quantidade > 0), 0) AS materiaisComSaldo,
+              COALESCE(SUM(CASE WHEN tipoControle = 'quantidade' THEN quantidade * custoUnitario ELSE 0 END), 0) AS valorMateriais
          FROM produtos WHERE ativo = 1`),
     q(`SELECT p.id, p.codigo, p.nome, p.unidade, p.quantidade, p.estoqueMinimo, p.tipoControle, c.nome AS categoria
          FROM produtos p JOIN categorias c ON c.id = p.categoriaId
@@ -69,7 +101,7 @@ async function resumo(req, res) {
     disponiveisPorCategoria.filter((c) => regex.test(c.categoria)).reduce((s, c) => s + Number(c.disponiveis), 0);
 
   const valorMateriaisTecnicos = materiais.reduce((s, m) => s + Number(m.quantidade) * Number(m.custoUnitario), 0);
-  const movimentacoesPorDia = await serieMovimentacoes(14);
+  const { serie: movimentacoesPorDia, agrupamento } = await serieMovimentacoes(periodo);
   const ultimasMovimentacoes = await Movimentacao.findAll({
     include: includesMovimentacao,
     order: [['createdAt', 'DESC'], ['id', 'DESC']],
@@ -79,6 +111,10 @@ async function resumo(req, res) {
   res.json({
     totalProdutos: Number(totais.produtos),
     totalUnidadesMaterial: Number(totais.unidadesMaterial),
+    materiaisDisponiveis: {
+      itens: Number(totais.materiaisComSaldo),
+      valor: Math.round(Number(totais.valorMateriais) * 100) / 100,
+    },
     totalEquipamentosEmEstoque: Number(porStatus('em_estoque').total),
     valorTotalEstoque: Math.round(Number(totais.valorEstoque) * 100) / 100,
     itensAbaixoMinimo: abaixoMinimo.length,
@@ -105,6 +141,12 @@ async function resumo(req, res) {
       valorEquipamentos: Math.round(Number(porStatus('com_tecnico').valor) * 100) / 100,
     },
     movimentacoesHoje: Number(movDia.total),
+    periodo: {
+      ...periodo,
+      agrupamento,
+      entradas: movimentacoesPorDia.reduce((t, d) => t + d.entradas, 0),
+      saidas: movimentacoesPorDia.reduce((t, d) => t + d.saidas, 0),
+    },
     movimentacoesPorDia,
     ultimasMovimentacoes,
   });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, baixarCSV, mensagemErro } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -12,12 +12,29 @@ import StatusBadge from '../components/StatusBadge.jsx';
 import Campo from '../components/Campo.jsx';
 import Icone from '../components/Icone.jsx';
 
-const FILTROS_INICIAIS = { inicio: hojeISO(-30), fim: hojeISO(), tipo: '', produtoId: '', tecnicoId: '', cliente: '', os: '' };
+const FILTROS_INICIAIS = { inicio: hojeISO(-30), fim: hojeISO(), tipo: '', produtoId: '', tecnicoId: '', fornecedorId: '', equipamentoId: '', cliente: '', os: '' };
+
+/** Filtros iniciais a partir da URL (links "Histórico" de produtos, técnicos, fornecedores e equipamentos). */
+function filtrosDaUrl(params) {
+  const filtros = { ...FILTROS_INICIAIS };
+  let veioDeLink = false;
+  Object.keys(FILTROS_INICIAIS).forEach((chave) => {
+    if (params.get(chave) !== null) {
+      filtros[chave] = params.get(chave);
+      veioDeLink = true;
+    }
+  });
+  // Vindo de um link de histórico, mostra todo o período (a menos que a URL diga outro)
+  if (veioDeLink && params.get('inicio') === null) filtros.inicio = '';
+  return filtros;
+}
 
 export default function Movimentacoes() {
   const { podeMovimentar } = useAuth();
   const toast = useToast();
-  const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
+  const [params, setParams] = useSearchParams();
+  const [filtros, setFiltros] = useState(() => filtrosDaUrl(params));
+  const [fornecedores, setFornecedores] = useState([]);
   const [pagina, setPagina] = useState(1);
   const [resultado, setResultado] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -27,6 +44,7 @@ export default function Movimentacoes() {
   useEffect(() => {
     api.get('/produtos', { params: { incluirInativos: true } }).then(({ data }) => setProdutos(data)).catch(() => {});
     api.get('/tecnicos', { params: { incluirInativos: true } }).then(({ data }) => setTecnicos(data)).catch(() => {});
+    api.get('/fornecedores').then(({ data }) => setFornecedores(data)).catch(() => {});
   }, []);
 
   const paramsApi = useCallback(() => {
@@ -76,6 +94,12 @@ export default function Movimentacoes() {
         {podeMovimentar && <Link to="/movimentacoes/nova" className="botao botao-primario"><Icone nome="mais" tamanho={16} /> Nova</Link>}
       </Cabecalho>
 
+      {filtros.equipamentoId && (
+        <div className="aviso">
+          Mostrando só o equipamento #{filtros.equipamentoId}.{' '}
+          <Link to={`/equipamentos/${filtros.equipamentoId}`} className="link-forte">Ver equipamento</Link>
+        </div>
+      )}
       <div className="cartao filtros-grade">
         <Campo rotulo="De"><input type="date" value={filtros.inicio} onChange={set('inicio')} /></Campo>
         <Campo rotulo="Até"><input type="date" value={filtros.fim} onChange={set('fim')} /></Campo>
@@ -97,10 +121,16 @@ export default function Movimentacoes() {
             {tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
           </select>
         </Campo>
+        <Campo rotulo="Fornecedor">
+          <select value={filtros.fornecedorId} onChange={set('fornecedorId')}>
+            <option value="">Todos</option>
+            {fornecedores.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+          </select>
+        </Campo>
         <Campo rotulo="Cliente"><input value={filtros.cliente} onChange={set('cliente')} placeholder="Código" /></Campo>
         <Campo rotulo="OS"><input value={filtros.os} onChange={set('os')} placeholder="Nº da OS" /></Campo>
         <div className="campo campo-acao">
-          <button type="button" className="botao" onClick={() => { setFiltros(FILTROS_INICIAIS); setPagina(1); }}>Limpar filtros</button>
+          <button type="button" className="botao" onClick={() => { setFiltros(FILTROS_INICIAIS); setPagina(1); setParams({}, { replace: true }); }}>Limpar filtros</button>
         </div>
       </div>
 

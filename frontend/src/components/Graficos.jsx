@@ -7,7 +7,8 @@ const COR = { entradas: '#257de0', saidas: '#f47230' };
 const TEXTO_2 = '#555555';
 const GRADE = '#ececec';
 
-const diaCurto = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+// Dia (AAAA-MM-DD) -> DD/MM; mês (AAAA-MM) -> MM/AAAA
+const diaCurto = (iso) => (iso.length === 7 ? `${iso.slice(5, 7)}/${iso.slice(0, 4)}` : `${iso.slice(8, 10)}/${iso.slice(5, 7)}`);
 
 function Legenda({ itens }) {
   return (
@@ -35,18 +36,18 @@ function DicaMovimentacoes({ active, payload, label }) {
 }
 
 /** Barras empilhadas: entradas x saídas por dia (últimos 14 dias). */
-export function GraficoMovimentacoes({ dados }) {
+export function GraficoMovimentacoes({ dados, descricaoPeriodo = 'Últimos 14 dias', agrupamento = 'dia' }) {
   const total = dados.reduce((s, d) => s + d.entradas + d.saidas, 0);
   return (
     <section className="cartao grafico">
       <div className="grafico-cabecalho">
         <div>
-          <h2>Movimentações por dia</h2>
-          <p className="texto-suave">Últimos 14 dias · {total} registro(s) · cada unidade serializada conta como 1</p>
+          <h2>Entradas e saídas por {agrupamento === 'mes' ? 'mês' : 'dia'}</h2>
+          <p className="texto-suave">{descricaoPeriodo} · {total} registro(s) · cada unidade serializada conta como 1</p>
         </div>
         <Legenda itens={[{ rotulo: 'Entradas', cor: COR.entradas }, { rotulo: 'Saídas', cor: COR.saidas }]} />
       </div>
-      <div className="grafico-area" role="img" aria-label={`Gráfico de entradas e saídas por dia nos últimos 14 dias, total de ${total} registros. A tabela abaixo traz os mesmos números.`}>
+      <div className="grafico-area" role="img" aria-label={`Gráfico de entradas e saídas por ${agrupamento === 'mes' ? 'mês' : 'dia'} (${descricaoPeriodo}), total de ${total} registros. A tabela abaixo traz os mesmos números.`}>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={dados} margin={{ top: 8, right: 4, left: -18, bottom: 0 }} barCategoryGap="22%">
             <CartesianGrid vertical={false} stroke={GRADE} />
@@ -63,7 +64,7 @@ export function GraficoMovimentacoes({ dados }) {
         <summary>Ver em tabela</summary>
         <div className="tabela-rolagem">
           <table className="tabela">
-            <thead><tr><th>Dia</th><th className="num">Entradas</th><th className="num">Saídas</th></tr></thead>
+            <thead><tr><th>{agrupamento === 'mes' ? 'Mês' : 'Dia'}</th><th className="num">Entradas</th><th className="num">Saídas</th></tr></thead>
             <tbody>
               {dados.map((d) => (
                 <tr key={d.dia}>

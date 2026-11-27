@@ -32,6 +32,7 @@ export default function TecnicoEstoque() {
         <button type="button" className="botao" onClick={async () => (await import('../services/pdf.js')).pdfTermoTecnico({ dados, usuario: usuario?.nome })}>
           <Icone nome="pdf" tamanho={16} /> Termo (PDF)
         </button>
+        <Link to={`/movimentacoes?tecnicoId=${tecnico.id}`} className="botao">Histórico</Link>
         {podeMovimentar && !vazio && (
           <Link to={`/movimentacoes/nova?tipo=devolucao_tecnico&tecnicoId=${tecnico.id}`} className="botao">Registrar devolução</Link>
         )}
@@ -57,7 +58,7 @@ export default function TecnicoEstoque() {
             ) : (
               <div className="tabela-rolagem">
                 <table className="tabela">
-                  <thead><tr><th>Produto</th><th>Nº de série</th><th>MAC</th><th>Desde</th></tr></thead>
+                  <thead><tr><th>Produto</th><th>Nº de série</th><th>MAC</th><th>Desde</th><th className="num">Dias</th></tr></thead>
                   <tbody>
                     {equipamentos.map((e) => (
                       <tr key={e.id}>
@@ -65,6 +66,7 @@ export default function TecnicoEstoque() {
                         <td data-rotulo="Nº de série"><Link to={`/equipamentos/${e.id}`} className="link-forte mono">{e.numeroSerie}</Link></td>
                         <td data-rotulo="MAC" className="mono">{e.mac || '—'}</td>
                         <td data-rotulo="Desde">{formatarDataHora(e.updatedAt)}</td>
+                        <td data-rotulo="Dias" className="num">{Math.floor((Date.now() - new Date(e.updatedAt)) / 86400000)}</td>
                       </tr>
                     ))}
                   </tbody>

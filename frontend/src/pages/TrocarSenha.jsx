@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { api, mensagemErro } from '../services/api.js';
+import { api, mensagemErro, token } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import Campo from '../components/Campo.jsx';
@@ -36,6 +36,8 @@ export default function TrocarSenha() {
     setEnviando(true);
     try {
       const { data } = await api.post('/auth/trocar-senha', { senhaAtual: form.senhaAtual, novaSenha: form.novaSenha });
+      // A troca de senha encerra as sessões antigas: guarda o novo token
+      token.salvar(data.token);
       atualizarUsuario(data.usuario);
       toast.sucesso('Senha alterada com sucesso.');
       navegar('/', { replace: true });

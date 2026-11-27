@@ -57,6 +57,7 @@ function crud(caminho, controller, regras, regrasParciais = regras) {
 
 crud('categorias', categorias, v.categoria);
 crud('produtos', produtos, v.produto(false), v.produto(true));
+router.get('/tecnicos/pendencias', a(tecnicos.pendencias));
 router.get('/tecnicos/:id/estoque', validar(v.id), a(tecnicos.estoque));
 crud('tecnicos', tecnicos, v.tecnico);
 crud('fornecedores', fornecedores, v.fornecedor);

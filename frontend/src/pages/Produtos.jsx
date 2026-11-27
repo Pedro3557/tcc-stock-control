@@ -11,9 +11,12 @@ import Modal from '../components/Modal.jsx';
 import Campo from '../components/Campo.jsx';
 import NivelEstoque from '../components/NivelEstoque.jsx';
 import Icone from '../components/Icone.jsx';
+import Paginacao from '../components/Paginacao.jsx';
+
+const POR_PAGINA = 50;
 
 const VAZIO = {
-  codigo: '', nome: '', marca: '', modelo: '', categoriaId: '', tipoControle: 'quantidade',
+  codigo: '', nome: '', descricao: '', marca: '', modelo: '', categoriaId: '', tipoControle: 'quantidade',
   unidade: 'un', local: '', estoqueMinimo: 0, custoUnitario: 0,
 };
 
@@ -28,6 +31,7 @@ export default function Produtos() {
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(VAZIO);
   const [salvando, setSalvando] = useState(false);
+  const [pagina, setPagina] = useState(1);
 
   const categoriaId = params.get('categoriaId') || '';
   const tipoControle = params.get('tipoControle') || '';
@@ -47,6 +51,7 @@ export default function Produtos() {
         params: { busca: busca || undefined, categoriaId: categoriaId || undefined, tipoControle: tipoControle || undefined, abaixoMinimo: abaixoMinimo || undefined },
       });
       setProdutos(data);
+      setPagina(1);
     } catch (e) {
       toast.erro(mensagemErro(e));
     } finally {
@@ -64,7 +69,7 @@ export default function Produtos() {
   }, []);
 
   function abrir(produto) {
-    setForm(produto ? { ...VAZIO, ...produto, marca: produto.marca || '', modelo: produto.modelo || '', local: produto.local || '' } : { ...VAZIO, categoriaId: categorias[0]?.id || '' });
+    setForm(produto ? { ...VAZIO, ...produto, descricao: produto.descricao || '', marca: produto.marca || '', modelo: produto.modelo || '', local: produto.local || '' } : { ...VAZIO, categoriaId: categorias[0]?.id || '' });
     setEditando(produto || {});
   }
 
@@ -72,7 +77,7 @@ export default function Produtos() {
     e.preventDefault();
     setSalvando(true);
     const dados = {
-      codigo: form.codigo, nome: form.nome, marca: form.marca, modelo: form.modelo,
+      codigo: form.codigo, nome: form.nome, descricao: form.descricao, marca: form.marca, modelo: form.modelo,
       categoriaId: Number(form.categoriaId), tipoControle: form.tipoControle,
       unidade: form.tipoControle === 'serializado' ? 'un' : form.unidade, local: form.local,
       estoqueMinimo: Number(form.estoqueMinimo || 0), custoUnitario: Number(String(form.custoUnitario).replace(',', '.') || 0),
@@ -162,7 +167,7 @@ export default function Produtos() {
                 </tr>
               </thead>
               <tbody>
-                {produtos.map((p) => {
+                {produtos.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA).map((p) => {
                   const abaixo = Number(p.quantidade) < Number(p.estoqueMinimo);
                   return (
                     <tr key={p.id} className={abaixo ? 'linha-alerta' : ''}>
@@ -174,6 +179,7 @@ export default function Produtos() {
                           {' · '}
                           {p.tipoControle === 'serializado' ? 'Serializado' : 'Por quantidade'}
                         </small>
+                        {p.descricao && <small className="texto-suave bloco descricao-curta" title={p.descricao}>{p.descricao}</small>}
                         {abaixo && <span className="tag-alerta">Abaixo do mínimo</span>}
                       </td>
                       <td data-rotulo="Categoria">{p.categoria?.nome}<small className="texto-suave bloco">{p.local ? `Local ${p.local}` : 'Sem local'}</small></td>
@@ -186,6 +192,7 @@ export default function Produtos() {
                         {p.tipoControle === 'serializado' && (
                           <Link to={`/equipamentos?produtoId=${p.id}`} className="botao botao-pequeno">Unidades</Link>
                         )}
+                        <Link to={`/movimentacoes?produtoId=${p.id}`} className="botao botao-pequeno">Histórico</Link>
                         {podeMovimentar && (
                           <Link to={`/movimentacoes/nova?tipo=entrada_compra&produtoId=${p.id}`} className="botao botao-pequeno">Entrada</Link>
                         )}
@@ -201,6 +208,10 @@ export default function Produtos() {
         )}
       </div>
 
+      {!carregando && produtos.length > POR_PAGINA && (
+        <Paginacao pagina={pagina} paginas={Math.ceil(produtos.length / POR_PAGINA)} total={produtos.length} aoMudar={setPagina} />
+      )}
+
       <Modal titulo={editando?.id ? 'Editar produto' : 'Novo produto'} aberto={!!editando} aoFechar={() => setEditando(null)} largura={680}>
         <form onSubmit={salvar} className="formulario grade-form">
           <Campo rotulo="Código (SKU)" obrigatorio>
@@ -214,6 +225,9 @@ export default function Produtos() {
           </Campo>
           <Campo rotulo="Nome" obrigatorio className="largura-total">
             <input value={form.nome} onChange={set('nome')} required maxLength={150} />
+          </Campo>
+          <Campo rotulo="Descrição" className="largura-total" dica="Opcional: características, aplicação, observações de uso.">
+            <textarea rows={2} value={form.descricao} onChange={set('descricao')} maxLength={2000} />
           </Campo>
           <Campo rotulo="Marca"><input value={form.marca} onChange={set('marca')} maxLength={80} /></Campo>
           <Campo rotulo="Modelo"><input value={form.modelo} onChange={set('modelo')} maxLength={80} /></Campo>

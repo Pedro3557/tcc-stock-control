@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { Usuario } = require('../models');
 const AppError = require('../utils/AppError');
 const auditoria = require('../services/auditoriaService');
+const { agoraSemMs } = require('../utils/sessao');
 
 async function listar(req, res) {
   res.json(await Usuario.findAll({ order: [['nome', 'ASC']] }));
@@ -53,7 +54,7 @@ async function atualizar(req, res) {
   if (recebeEmail !== undefined) dados.recebeEmail = Boolean(recebeEmail);
   if (senha) {
     dados.senhaHash = await bcrypt.hash(senha, 10);
-    dados.senhaAlteradaEm = new Date(); // encerra as sessões abertas com a senha antiga
+    dados.senhaAlteradaEm = agoraSemMs(); // encerra as sessões abertas com a senha antiga
     // Senha redefinida pelo admin para outra pessoa vira provisória
     dados.precisaTrocarSenha = !proprio;
   }

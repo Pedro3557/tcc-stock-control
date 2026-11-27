@@ -105,6 +105,8 @@ const filtrosMovimentacao = [
   query('tipo').optional().custom((v) => String(v).split(',').every((t) => TIPOS_MOVIMENTACAO.includes(t))).withMessage('Tipo inválido.'),
   query('produtoId').optional().isInt({ min: 1 }).withMessage('Produto inválido.'),
   query('tecnicoId').optional().isInt({ min: 1 }).withMessage('Técnico inválido.'),
+  query('fornecedorId').optional().isInt({ min: 1 }).withMessage('Fornecedor inválido.'),
+  query('equipamentoId').optional().isInt({ min: 1 }).withMessage('Equipamento inválido.'),
 ];
 
 const configuracoes = [

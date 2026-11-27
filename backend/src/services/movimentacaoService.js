@@ -142,6 +142,7 @@ function validarCamposPorTipo(tipo, d) {
     exigir(d.numeroOS, 'Informe o número da ordem de serviço (OS).');
   }
   if (tipo === 'baixa') exigir(d.observacao, 'Informe o motivo da baixa.');
+  if (tipo === 'envio_manutencao') exigir(d.observacao, 'Descreva o problema apresentado pelo equipamento.');
   if (tipo === 'ajuste_inventario') exigir(d.observacao, 'Informe o motivo do ajuste de inventário.');
 }
 

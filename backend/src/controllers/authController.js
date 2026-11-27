@@ -1,11 +1,9 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { Usuario } = require('../models');
-const { jwtSecret, jwtExpiracao } = require('../config');
+const { emitirToken, agoraSemMs } = require('../utils/sessao');
 const AppError = require('../utils/AppError');
 const auditoria = require('../services/auditoriaService');
 
-const emitirToken = (usuario) => jwt.sign({ id: usuario.id, perfil: usuario.perfil }, jwtSecret, { expiresIn: jwtExpiracao });
 
 async function login(req, res) {
   const email = String(req.body.email).trim().toLowerCase();
@@ -46,7 +44,7 @@ async function trocarSenha(req, res) {
     throw new AppError('A nova senha precisa ser diferente da atual.', 400);
   }
 
-  await usuario.update({ senhaHash: await bcrypt.hash(novaSenha, 10), precisaTrocarSenha: false, senhaAlteradaEm: new Date() });
+  await usuario.update({ senhaHash: await bcrypt.hash(novaSenha, 10), precisaTrocarSenha: false, senhaAlteradaEm: agoraSemMs() });
   await auditoria.registrar({ req, acao: 'trocar_senha', modulo: 'autenticacao', registroId: usuario.id });
   // Novo token: os emitidos antes da troca deixam de valer
   res.json({ mensagem: 'Senha alterada com sucesso.', token: emitirToken(usuario), usuario: usuario.toJSON() });

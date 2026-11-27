@@ -312,11 +312,11 @@ export default function NovaMovimentacao() {
         )}
 
         <Campo
-          rotulo={tipo === 'baixa' ? 'Motivo da baixa' : tipo === 'ajuste_inventario' ? 'Motivo do ajuste' : 'Observação'}
-          obrigatorio={['baixa', 'ajuste_inventario'].includes(tipo)}
+          rotulo={tipo === 'baixa' ? 'Motivo da baixa' : tipo === 'ajuste_inventario' ? 'Motivo do ajuste' : tipo === 'envio_manutencao' ? 'Descrição do problema' : 'Observação'}
+          obrigatorio={['baixa', 'ajuste_inventario', 'envio_manutencao'].includes(tipo)}
           className="largura-total"
         >
-          <textarea rows={2} value={form.observacao} onChange={set('observacao')} required={['baixa', 'ajuste_inventario'].includes(tipo)} maxLength={2000} />
+          <textarea rows={2} value={form.observacao} onChange={set('observacao')} required={['baixa', 'ajuste_inventario', 'envio_manutencao'].includes(tipo)} maxLength={2000} placeholder={tipo === 'envio_manutencao' ? 'Ex.: não liga, LOS aceso, reinicia sozinho…' : undefined} />
         </Campo>
 
         <div className="formulario-acoes largura-total">

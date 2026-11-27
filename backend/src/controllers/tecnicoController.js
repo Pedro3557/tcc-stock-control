@@ -135,4 +135,33 @@ async function excluir(req, res) {
   res.status(204).end();
 }
 
-module.exports = { listar, obter, estoque, criar, atualizar, excluir, materiaisComTecnicos };
+/**
+ * Equipamentos em posse de técnicos (pendentes de devolução ou de instalação), do mais antigo para o mais recente.
+ * "dias" = tempo desde a última movimentação da unidade.
+ */
+async function pendencias(req, res) {
+  const where = { status: 'com_tecnico' };
+  if (req.query.tecnicoId) where.tecnicoId = req.query.tecnicoId;
+  const equipamentos = await Equipamento.findAll({
+    where,
+    include: [
+      { model: Produto, as: 'produto', attributes: ['id', 'codigo', 'nome', 'custoUnitario'] },
+      { model: Tecnico, as: 'tecnico', attributes: ['id', 'nome', 'equipe', 'telefone'] },
+    ],
+    order: [['updatedAt', 'ASC']],
+  });
+  const agora = Date.now();
+  res.json(
+    equipamentos.map((e) => ({
+      id: e.id,
+      numeroSerie: e.numeroSerie,
+      mac: e.mac,
+      produto: e.produto,
+      tecnico: e.tecnico,
+      desde: e.updatedAt,
+      dias: Math.floor((agora - new Date(e.updatedAt).getTime()) / 86400000),
+    }))
+  );
+}
+
+module.exports = { listar, obter, estoque, pendencias, criar, atualizar, excluir, materiaisComTecnicos };

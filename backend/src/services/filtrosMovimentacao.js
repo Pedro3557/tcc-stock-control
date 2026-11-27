@@ -9,7 +9,7 @@ function dataValida(texto) {
 /** Monta o WHERE das movimentações a partir da query string. Datas em YYYY-MM-DD (horário de Brasília). */
 function montarFiltros(query) {
   const where = {};
-  const { inicio, fim, tipo, produtoId, tecnicoId, equipamentoId, cliente, clienteCodigo, os, numeroOS, usuarioId } = query;
+  const { inicio, fim, tipo, produtoId, tecnicoId, fornecedorId, equipamentoId, cliente, clienteCodigo, os, numeroOS, usuarioId } = query;
 
   if (inicio || fim) {
     where.createdAt = {};
@@ -25,6 +25,7 @@ function montarFiltros(query) {
   if (tipo) where.tipo = String(tipo).includes(',') ? String(tipo).split(',') : tipo;
   if (produtoId) where.produtoId = produtoId;
   if (tecnicoId) where.tecnicoId = tecnicoId;
+  if (fornecedorId) where.fornecedorId = fornecedorId;
   if (equipamentoId) where.equipamentoId = equipamentoId;
   if (usuarioId) where.usuarioId = usuarioId;
   const codCliente = clienteCodigo || cliente;

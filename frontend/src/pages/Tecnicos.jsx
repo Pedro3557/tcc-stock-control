@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import CadastroSimples from '../components/CadastroSimples.jsx';
+import PendenciasDevolucao from '../components/PendenciasDevolucao.jsx';
 import { formatarMoeda } from '../services/formatos.js';
 
 export default function Tecnicos() {
   return (
+    <>
     <CadastroSimples
       titulo="Técnicos"
       subtitulo="Equipe de campo e o que cada um tem em mãos"
@@ -24,8 +26,17 @@ export default function Tecnicos() {
         { titulo: 'Valor em material', valor: (t) => formatarMoeda(t.valorMateriais), className: 'num' },
       ]}
       acoesExtras={(t) => (
-        <Link to={`/tecnicos/${t.id}`} className="botao botao-pequeno">Em mãos</Link>
+        <>
+          <Link to={`/tecnicos/${t.id}`} className="botao botao-pequeno">Em mãos</Link>
+          <Link to={`/movimentacoes?tecnicoId=${t.id}`} className="botao botao-pequeno">Histórico</Link>
+        </>
       )}
     />
+    <h2 className="secao-titulo">Equipamentos pendentes de devolução</h2>
+    <p className="texto-suave nota-topo">Unidades que estão com técnicos e ainda não foram instaladas nem devolvidas. Em vermelho: há 7 dias ou mais.</p>
+    <div className="cartao sem-padding">
+      <PendenciasDevolucao />
+    </div>
+    </>
   );
 }

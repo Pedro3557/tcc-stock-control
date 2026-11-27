@@ -21,7 +21,7 @@ async function main() {
     console.error(`Usuário não encontrado: ${email}`);
     process.exit(1);
   }
-  await usuario.update({ senhaHash: await bcrypt.hash(senha, 10), precisaTrocarSenha: true, ativo: true });
+  await usuario.update({ senhaHash: await bcrypt.hash(senha, 10), precisaTrocarSenha: true, ativo: true, senhaAlteradaEm: new Date(Math.floor(Date.now() / 1000) * 1000) });
   console.log(`Senha de ${usuario.email} redefinida. Ela deverá ser trocada no próximo login.`);
   await sequelize.close();
 }
