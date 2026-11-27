@@ -45,9 +45,14 @@ module.exports = {
     await queryInterface.addIndex('equipamentos', ['codigoEtiqueta'], { unique: true, name: 'equipamentos_codigo_etiqueta_unico' });
 
     await queryInterface.addIndex('movimentacoes', ['tecnicoId', 'produtoId'], { name: 'movimentacoes_tecnico_produto' });
+    // Índice simples criado por um "down" anterior (desfazer e refazer): o composto já atende a chave estrangeira
+    const [indices] = await queryInterface.sequelize.query("SHOW INDEX FROM movimentacoes WHERE Key_name = 'movimentacoes_tecnico'");
+    if (indices.length) await queryInterface.removeIndex('movimentacoes', 'movimentacoes_tecnico');
   },
 
   async down(queryInterface) {
+    // O MySQL pode estar usando o índice composto na chave estrangeira de tecnicoId: cria um simples antes
+    await queryInterface.addIndex('movimentacoes', ['tecnicoId'], { name: 'movimentacoes_tecnico' });
     await queryInterface.removeIndex('movimentacoes', 'movimentacoes_tecnico_produto');
     await queryInterface.removeIndex('equipamentos', 'equipamentos_codigo_etiqueta_unico');
     await queryInterface.removeColumn('equipamentos', 'codigoEtiqueta');

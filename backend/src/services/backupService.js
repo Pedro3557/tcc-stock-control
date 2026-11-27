@@ -30,6 +30,7 @@ const configBanco = configs[ambiente];
 function pastaBackups() {
   const pasta = path.resolve(process.env.BACKUP_DIR || path.join(__dirname, '..', '..', 'backups'));
   if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true, mode: 0o700 });
+  if (!fs.statSync(pasta).isDirectory()) throw new AppError(`O caminho de backups não é uma pasta: ${pasta}`, 500);
   return pasta;
 }
 
@@ -77,14 +78,35 @@ async function migracoesAtuais(conexao) {
 
 /** Escreve o dump completo no caminho informado. Retorna { tabelas, registros }. */
 async function gerarArquivo(caminho) {
+  // Abre o arquivo ANTES de consultar o banco: sem permissão/espaço, falha aqui com uma mensagem clara
+  const saida = fs.createWriteStream(caminho, { mode: 0o600 });
+  await new Promise((ok, falha) => {
+    saida.once('open', ok);
+    saida.once('error', falha);
+  });
   const conexao = novaConexao();
   const gzip = zlib.createGzip({ level: 6 });
-  const saida = fs.createWriteStream(caminho, { mode: 0o600 });
-  const gravacao = pipeline(gzip, saida);
+  let erroGravacao = null;
+  const gravacao = pipeline(gzip, saida).catch((erro) => {
+    erroGravacao = erro;
+    throw erro;
+  });
+  gravacao.catch(() => {}); // o erro é tratado em "escrever" e no final
   const escrever = (linha) =>
-    new Promise((resolve) => {
-      if (gzip.write(`${linha}\n`)) resolve();
-      else gzip.once('drain', resolve);
+    new Promise((resolve, reject) => {
+      if (erroGravacao) return reject(erroGravacao);
+      if (gzip.write(`${linha}\n`)) return resolve();
+      const aoDrenar = () => {
+        gzip.off('error', aoErro);
+        resolve();
+      };
+      const aoErro = (erro) => {
+        gzip.off('drain', aoDrenar);
+        reject(erro);
+      };
+      gzip.once('drain', aoDrenar);
+      gzip.once('error', aoErro);
+      return undefined;
     });
 
   let registros = 0;
@@ -159,8 +181,8 @@ async function criarBackup({ origem = 'manual', usuario = null } = {}) {
   const executar = async () => {
     const arquivo = nomeArquivo(origem);
     const registro = await Backup.create({ arquivo, origem, situacao: 'em_andamento', usuarioId: usuario?.id || null, iniciadoEm: new Date() });
-    const caminho = path.join(pastaBackups(), arquivo);
     try {
+      const caminho = path.join(pastaBackups(), arquivo);
       const { tabelas, registros } = await gerarArquivo(caminho);
       const sha256 = await sha256Arquivo(caminho);
       fs.writeFileSync(`${caminho}.sha256`, `${sha256}  ${arquivo}\n`, { mode: 0o600 });
