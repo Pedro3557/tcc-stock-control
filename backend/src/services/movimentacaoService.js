@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { sequelize, Produto, Equipamento, Movimentacao, Tecnico, Fornecedor } = require('../models');
 const AppError = require('../utils/AppError');
 const { normalizarMac, pareceMac, textoOuNull } = require('../utils/formatos');
+const { extrairCodigoEtiqueta } = require('../utils/codigos');
 const { STATUS_ROTULO, TIPO_ROTULO, UNIDADES_INTEIRAS } = require('../config/constantes');
 
 /**
@@ -142,6 +143,7 @@ function validarCamposPorTipo(tipo, d) {
     exigir(d.numeroOS, 'Informe o número da ordem de serviço (OS).');
   }
   if (tipo === 'baixa') exigir(d.observacao, 'Informe o motivo da baixa.');
+  if (tipo === 'envio_manutencao') exigir(d.observacao, 'Descreva o problema apresentado pelo equipamento.');
   if (tipo === 'ajuste_inventario') exigir(d.observacao, 'Informe o motivo do ajuste de inventário.');
 }
 
@@ -284,12 +286,12 @@ async function entradaSerializados(d, produto, usuario, t) {
 
   const movimentacoes = [];
   for (const u of unidades) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const equipamento = await Equipamento.create(
       { produtoId: produto.id, numeroSerie: u.numeroSerie, mac: u.mac, status: 'em_estoque' },
       { transaction: t }
     );
-    // eslint-disable-next-line no-await-in-loop
+     
     const mov = await Movimentacao.create(
       {
         produtoId: produto.id,
@@ -329,6 +331,9 @@ async function localizarEquipamentos(d, t) {
       if (pareceMac(i)) macs.push(normalizarMac(i));
     });
     if (macs.length) condicoes.push({ mac: macs });
+    // QR Code da etiqueta (endereço .../e/CODIGO) ou o código impresso
+    const codigos = identificadores.map(extrairCodigoEtiqueta).filter(Boolean);
+    if (codigos.length) condicoes.push({ codigoEtiqueta: codigos });
   }
 
   const equipamentos = await Equipamento.findAll({
@@ -343,7 +348,8 @@ async function localizarEquipamentos(d, t) {
   const naoEncontrados = identificadores.filter((i) => {
     const iu = i.toUpperCase();
     const mac = pareceMac(i) ? normalizarMac(i) : null;
-    return !equipamentos.some((e) => e.numeroSerie.toUpperCase() === iu || (mac && e.mac === mac));
+    const codigo = extrairCodigoEtiqueta(i);
+    return !equipamentos.some((e) => e.numeroSerie.toUpperCase() === iu || (mac && e.mac === mac) || (codigo && e.codigoEtiqueta === codigo));
   });
   const idsNaoEncontrados = ids.filter((id) => !equipamentos.some((e) => e.id === id));
   if (naoEncontrados.length || idsNaoEncontrados.length) {
@@ -443,7 +449,7 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
       alteracoes.observacao = d.observacao;
     }
 
-    // eslint-disable-next-line no-await-in-loop
+     
     await eq.update(alteracoes, { transaction: t });
 
     let quantidade = 1;
@@ -453,7 +459,7 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
       else quantidade = 0;
     }
 
-    // eslint-disable-next-line no-await-in-loop
+     
     const mov = await Movimentacao.create(
       {
         produtoId: eq.produtoId,
@@ -476,7 +482,7 @@ async function movimentarSerializados(d, usuario, t, produtoInformado) {
   }
 
   for (const produtoId of produtosAfetados) {
-    // eslint-disable-next-line no-await-in-loop
+     
     await recalcularSerializado(produtoId, t);
   }
 
@@ -550,10 +556,4 @@ async function registrar(dadosBrutos, usuario, opcoes = {}) {
   return movimentacoes;
 }
 
-module.exports = {
-  registrar,
-  saldoTecnico,
-  recalcularSerializado,
-  interpretarListaEntrada,
-  REGRAS_SERIALIZADO,
-};
+module.exports = { registrar, interpretarListaEntrada, REGRAS_SERIALIZADO };

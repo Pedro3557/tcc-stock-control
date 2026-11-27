@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import CadastroSimples from '../components/CadastroSimples.jsx';
 
 export default function Fornecedores() {
@@ -19,6 +20,9 @@ export default function Fornecedores() {
         { titulo: 'Telefone', valor: (f) => f.telefone || '—' },
         { titulo: 'E-mail', valor: (f) => f.email || '—' },
       ]}
+      acoesExtras={(f) => (
+        <Link to={`/movimentacoes?fornecedorId=${f.id}&tipo=entrada_compra`} className="botao botao-pequeno">Entradas</Link>
+      )}
     />
   );
 }

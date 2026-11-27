@@ -7,6 +7,7 @@
  * 3. Roda as migrations e, se o banco estiver vazio, o seed (dados iniciais)
  *
  * Pode ser rodado quantas vezes quiser: o que já estiver pronto é mantido.
+ * Com "npm run configurar -- --demo" também carrega dados de demonstração (só em banco vazio).
  * Sem perguntas (ex.: CI): defina MYSQL_ROOT_USER e MYSQL_ROOT_PASSWORD.
  */
 const fs = require('fs');
@@ -73,9 +74,9 @@ const esperando = [];
 function abrirLeitor() {
   if (leitor) return;
   leitor = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: Boolean(process.stdin.isTTY) });
-  // eslint-disable-next-line no-underscore-dangle
+   
   const escreverOriginal = leitor._writeToOutput.bind(leitor);
-  // eslint-disable-next-line no-underscore-dangle
+   
   leitor._writeToOutput = (s) => {
     if (!ocultar || /[\r\n]/.test(s)) escreverOriginal(s);
     else escreverOriginal('*'.repeat(s.length));
@@ -131,6 +132,7 @@ async function configurarBanco() {
 
   const base = { host: env.DB_HOST || 'localhost', port: Number(env.DB_PORT || 3306) };
   const banco = env.DB_NAME || 'estoque_provedor';
+  const bancoTeste = env.DB_NAME_TEST || `${banco}_teste`;
   const usuario = env.DB_USER || 'estoque';
   const senha = env.DB_PASSWORD || '';
   info(`Servidor ${base.host}:${base.port} · banco "${banco}" · usuário "${usuario}"`);
@@ -143,15 +145,29 @@ async function configurarBanco() {
     } catch {
       /* sem permissão para criar: o teste abaixo diz se o banco existe */
     }
+    let acessoPrincipal = false;
     try {
       await c.query(`USE \`${banco}\``);
+      acessoPrincipal = true;
       ok(`Conexão com o usuário "${usuario}" funcionando.`);
-      await c.end();
-      return;
     } catch {
-      await c.end();
       info(`O usuário "${usuario}" conecta, mas não tem acesso ao banco "${banco}".`);
     }
+    // Banco separado dos testes automatizados (npm test): instalações antigas não tinham essa permissão
+    let acessoTeste = false;
+    if (acessoPrincipal) {
+      try {
+        await c.query(`CREATE DATABASE IF NOT EXISTS \`${bancoTeste}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+        await c.query(`USE \`${bancoTeste}\``);
+        acessoTeste = true;
+        ok(`Banco de testes "${bancoTeste}" acessível.`);
+      } catch {
+        info(`O usuário "${usuario}" ainda não tem permissão no banco de testes "${bancoTeste}" (usado pelo "npm test").`);
+      }
+    }
+    await c.end();
+    if (acessoPrincipal && acessoTeste) return;
+    if (acessoPrincipal && process.argv.includes('--sem-banco-teste')) return;
   } catch (erro) {
     if (['ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH'].includes(erro.code)) {
       falhar(`Não foi possível chegar ao MySQL em ${base.host}:${base.port} — ele está ligado?`, DICAS_MYSQL_PARADO);
@@ -183,7 +199,7 @@ async function configurarBanco() {
   if (!admin) {
     fecharLeitor();
     falhar('Não consegui entrar como root do MySQL.', [
-      'Se esqueceu a senha do root, a forma mais simples é reinstalar o MySQL ou usar o Docker (ver GUIA_INSTALACAO_WINDOWS.md).',
+      'Se esqueceu a senha do root, a forma mais simples é reinstalar o MySQL ou usar o Docker (ver docs/GUIA_INSTALACAO.md).',
       `Ou coloque em backend/.env um usuário do MySQL que você saiba a senha (DB_USER e DB_PASSWORD).`,
     ]);
   }
@@ -194,6 +210,8 @@ async function configurarBanco() {
     await admin.query('CREATE USER IF NOT EXISTS ?@? IDENTIFIED BY ?', [usuario, host, senha]);
     await admin.query('ALTER USER ?@? IDENTIFIED BY ?', [usuario, host, senha]);
     await admin.query(`GRANT ALL PRIVILEGES ON \`${banco}\`.* TO ?@?`, [usuario, host]);
+    // Banco separado usado só pelos testes automatizados (npm test)
+    await admin.query(`GRANT ALL PRIVILEGES ON \`${bancoTeste}\`.* TO ?@?`, [usuario, host]);
   }
   fecharLeitor();
   await admin.query('FLUSH PRIVILEGES');
@@ -219,6 +237,8 @@ function rodarNoBackend(script) {
   if (r.status !== 0) falhar(`O comando "npm run ${script}" falhou (veja a mensagem acima).`);
 }
 
+const comDemo = process.argv.includes('--demo');
+
 function prepararTabelas() {
   titulo('Tabelas (migrations)');
   rodarNoBackend('migrate');
@@ -226,6 +246,10 @@ function prepararTabelas() {
 
   titulo('Dados iniciais (seed)');
   rodarNoBackend('seed');
+  if (comDemo) {
+    titulo('Dados de demonstração (seed:demo)');
+    rodarNoBackend('seed:demo');
+  }
 }
 
 (async () => {

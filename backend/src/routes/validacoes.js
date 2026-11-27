@@ -1,6 +1,15 @@
 const { body, param, query } = require('express-validator');
 const { PERFIS, TIPOS_CONTROLE, UNIDADES, TIPOS_MOVIMENTACAO, STATUS_EQUIPAMENTO } = require('../config/constantes');
 
+const { mensagemSenhaFraca } = require('../utils/senha');
+
+/** Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial. */
+function senhaForte(valor) {
+  const mensagem = mensagemSenhaFraca(valor);
+  if (mensagem) throw new Error(mensagem);
+  return true;
+}
+
 const id = [param('id').isInt({ min: 1 }).withMessage('ID inválido.')];
 
 const login = [
@@ -12,9 +21,7 @@ const trocarSenha = [
   body('senhaAtual').notEmpty().withMessage('Informe a senha atual.'),
   body('novaSenha')
     .isString().withMessage('Informe a nova senha.').bail()
-    .isLength({ min: 8 }).withMessage('A nova senha deve ter pelo menos 8 caracteres.').bail()
-    .matches(/[A-Za-z]/).withMessage('A nova senha deve ter ao menos uma letra.').bail()
-    .matches(/\d/).withMessage('A nova senha deve ter ao menos um número.'),
+    .custom(senhaForte),
 ];
 
 const categoria = [
@@ -29,6 +36,7 @@ const produto = (parcial = false) => {
     opc('nome').isString().withMessage('Informe o nome do produto.').bail().trim().isLength({ min: 2, max: 150 }).withMessage('Informe o nome do produto (2 a 150 caracteres).'),
     opc('tipoControle').isIn(TIPOS_CONTROLE).withMessage('Tipo de controle deve ser "serializado" ou "quantidade".'),
     body('unidade').optional().isIn(UNIDADES).withMessage(`Unidade inválida. Use: ${UNIDADES.join(', ')}.`),
+    body('descricao').optional({ values: 'null' }).isString().isLength({ max: 2000 }).withMessage('Descrição muito longa (máx. 2000 caracteres).'),
     body('marca').optional({ values: 'null' }).isString().isLength({ max: 80 }).withMessage('Marca muito longa.'),
     body('modelo').optional({ values: 'null' }).isString().isLength({ max: 80 }).withMessage('Modelo muito longo.'),
     body('local').optional({ values: 'null' }).isString().isLength({ max: 60 }).withMessage('Local muito longo.'),
@@ -62,9 +70,10 @@ const usuario = (parcial = false) => {
     opc('email').isEmail().withMessage('E-mail inválido.'),
     opc('perfil').isIn(PERFIS).withMessage('Perfil inválido. Use admin, almoxarife ou consulta.'),
     (parcial ? body('senha').optional({ values: 'falsy' }) : body('senha'))
-      .isLength({ min: 6 })
-      .withMessage('A senha deve ter pelo menos 6 caracteres.'),
+      .custom(senhaForte),
     body('ativo').optional().isBoolean().toBoolean(),
+    body('recebeNotificacoes').optional().isBoolean().withMessage('Campo "recebe notificações" inválido.').toBoolean(),
+    body('recebeEmail').optional().isBoolean().withMessage('Campo "recebe e-mail" inválido.').toBoolean(),
   ];
 };
 
@@ -96,6 +105,38 @@ const filtrosMovimentacao = [
   query('tipo').optional().custom((v) => String(v).split(',').every((t) => TIPOS_MOVIMENTACAO.includes(t))).withMessage('Tipo inválido.'),
   query('produtoId').optional().isInt({ min: 1 }).withMessage('Produto inválido.'),
   query('tecnicoId').optional().isInt({ min: 1 }).withMessage('Técnico inválido.'),
+  query('fornecedorId').optional().isInt({ min: 1 }).withMessage('Fornecedor inválido.'),
+  query('equipamentoId').optional().isInt({ min: 1 }).withMessage('Equipamento inválido.'),
+];
+
+const inventario = [
+  body('descricao').optional({ values: 'falsy' }).isString().isLength({ max: 150 }).withMessage('Descrição muito longa (máx. 150).'),
+  body('categoriaIds').optional().isArray().withMessage('Categorias inválidas.'),
+  body('produtoIds').optional().isArray().withMessage('Produtos inválidos.'),
+  body('observacao').optional({ values: 'null' }).isString().isLength({ max: 2000 }),
+];
+const contagem = [
+  body('produtoId').isInt({ min: 1 }).withMessage('Produto inválido.'),
+];
+const leitura = [
+  body('valor').isString().withMessage('Informe o código lido.').bail().trim().notEmpty().withMessage('Informe o código lido.'),
+];
+const decisoes = [
+  body('decisoes').isArray({ min: 1 }).withMessage('Envie ao menos uma decisão.'),
+];
+
+const configuracoes = [
+  body('valores').isObject().withMessage('Envie as configurações no campo "valores".'),
+];
+
+const filtrosAuditoria = [
+  query('usuarioId').optional().isInt({ min: 1 }).withMessage('Usuário inválido.'),
+  query('resultado').optional().isIn(['sucesso', 'falha']).withMessage('Resultado inválido.'),
+];
+
+const restauracao = [
+  body('confirmacao').isString().withMessage('Digite RESTAURAR para confirmar.'),
+  body('senha').isString().notEmpty().withMessage('Informe a sua senha para confirmar.'),
 ];
 
 const filtrosEquipamento = [
@@ -116,4 +157,11 @@ module.exports = {
   movimentacao,
   filtrosMovimentacao,
   filtrosEquipamento,
+  configuracoes,
+  inventario,
+  contagem,
+  leitura,
+  decisoes,
+  filtrosAuditoria,
+  restauracao,
 };

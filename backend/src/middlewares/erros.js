@@ -14,7 +14,7 @@ function rotaNaoEncontrada(req, res) {
   res.status(404).json({ erro: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
 }
 
-// eslint-disable-next-line no-unused-vars
+ 
 function tratarErros(erro, req, res, next) {
   if (erro instanceof AppError) {
     return res.status(erro.status).json({ erro: erro.message, detalhes: erro.detalhes });

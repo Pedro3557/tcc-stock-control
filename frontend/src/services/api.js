@@ -1,35 +1,15 @@
 import axios from 'axios';
 
-const CHAVE_TOKEN = 'estoque_token';
+import { sessao } from './sessao.js';
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3333/api',
+  // Padrão: mesma origem (/api). Em desenvolvimento o Vite repassa /api para a API (ver vite.config.js).
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
 });
 
-export const token = {
-  ler: () => {
-    try {
-      return localStorage.getItem(CHAVE_TOKEN);
-    } catch {
-      return null;
-    }
-  },
-  salvar: (valor) => {
-    try {
-      localStorage.setItem(CHAVE_TOKEN, valor);
-    } catch {
-      /* armazenamento indisponível */
-    }
-  },
-  limpar: () => {
-    try {
-      localStorage.removeItem(CHAVE_TOKEN);
-    } catch {
-      /* armazenamento indisponível */
-    }
-  },
-};
+// Token de login: guardado por aba e compartilhado entre as abas abertas (ver sessao.js)
+export const token = sessao;
 
 api.interceptors.request.use((config) => {
   const t = token.ler();
@@ -58,7 +38,12 @@ api.interceptors.response.use(
 /** Extrai a mensagem de erro amigável enviada pela API. */
 export function mensagemErro(erro, padrao = 'Não foi possível concluir a operação.') {
   if (!erro?.response) return 'Sem conexão com o servidor. Verifique sua internet ou se a API está no ar.';
-  return erro.response.data?.erro || padrao;
+  if (erro.response.data?.erro) return erro.response.data.erro;
+  // Sem mensagem da API (ex.: API desligada atrás do proxy do Vite ou de um proxy reverso)
+  if ([500, 502, 503, 504].includes(erro.response.status)) {
+    return 'O servidor do sistema (API) não respondeu. Confira se ele está rodando: no terminal do "npm run dev" deve aparecer "[API] API de estoque rodando".';
+  }
+  return padrao;
 }
 
 // Em downloads (responseType blob) o JSON de erro chega como Blob: converte para a mensagem continuar aparecendo

@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../config');
 const { Usuario } = require('../models');
 const AppError = require('../utils/AppError');
+const { versaoSenha } = require('../utils/sessao');
 
 async function autenticar(req, res, next) {
   try {
@@ -21,6 +22,10 @@ async function autenticar(req, res, next) {
     const usuario = await Usuario.findByPk(payload.id);
     if (!usuario || !usuario.ativo) {
       throw new AppError('Usuário inativo ou inexistente. Faça login novamente.', 401);
+    }
+    // Senha trocada depois da emissão do token: a sessão antiga deixa de valer
+    if ((payload.sa || 0) !== versaoSenha(usuario)) {
+      throw new AppError('Sua senha foi alterada. Faça login novamente.', 401);
     }
 
     req.usuario = usuario;
