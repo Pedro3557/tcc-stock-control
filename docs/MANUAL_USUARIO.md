@@ -59,7 +59,10 @@ Cada equipamento está sempre em **uma situação (status)**:
 5. Para sair: ícone de saída ao lado do seu nome.
 
 - Depois de 10 senhas erradas, o login fica bloqueado por 15 minutos.
-- A sessão expira depois de algumas horas (padrão: 10). Basta entrar de novo.
+- **Ao fechar o navegador (todas as abas do sistema), você sai automaticamente**, o que é bom em computadores compartilhados. Recarregar a página ou abrir o sistema em outra aba, com uma aba ainda aberta, mantém o login.
+- **Sair** em uma aba encerra a sessão em todas as abas abertas.
+- Mesmo com o navegador aberto, a sessão expira depois de algumas horas (padrão: 10). Basta entrar de novo.
+- Se o navegador estiver configurado para "continuar de onde parou", ele pode reabrir as abas já logadas: nesse caso, use **Sair**.
 - Trocar a senha encerra as sessões abertas em outros aparelhos.
 
 | Perfil | Pode |

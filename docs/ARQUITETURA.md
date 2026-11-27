@@ -145,7 +145,7 @@ usuarios ─┬─< movimentacoes >─┬─ produtos >── categorias
 | Item | Como é feito |
 |---|---|
 | Senhas | bcrypt (custo 10); mínimo de 8 caracteres com maiúscula, minúscula, número e caractere especial (regra única em `utils/senha.js`, espelhada na tela); senha definida pelo admin é provisória (troca obrigatória) |
-| Sessão | JWT (`JWT_SECRET` obrigatório e forte em produção; validade `JWT_EXPIRACAO`). O token leva a "versão da senha": ao trocá-la, os tokens antigos deixam de valer. Usuário inativado perde o acesso na hora |
+| Sessão | Token guardado por aba (`sessionStorage`), compartilhado entre as abas abertas (`BroadcastChannel`): fechar o navegador encerra a sessão; "Sair" encerra em todas as abas. JWT (`JWT_SECRET` obrigatório e forte em produção; validade `JWT_EXPIRACAO`). O token leva a "versão da senha": ao trocá-la, os tokens antigos deixam de valer. Usuário inativado perde o acesso na hora |
 | Força bruta | 10 erros de login a cada 15 min por IP + e-mail → 429 |
 | Permissões | `permitir(...)` em cada rota de alteração; front-end esconde o que o perfil não pode usar |
 | Entrada | express-validator em todas as rotas de escrita; upload aceita só `.xlsx` de até 5 MB |

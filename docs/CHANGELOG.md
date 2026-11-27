@@ -5,6 +5,7 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ## [2.0.1] — 2026-11-27
 
 ### Alterado
+- A sessão termina ao fechar o navegador: o token fica só na aba (`sessionStorage`), compartilhado entre as abas abertas; "Sair" encerra a sessão em todas as abas.
 - Senha forte obrigatória: 8+ caracteres com letra maiúscula, minúscula, número e caractere especial (na troca de senha, no cadastro de usuários e no script de redefinição). A tela mostra a lista de requisitos, em vermelho o que falta.
 
 ### Corrigido

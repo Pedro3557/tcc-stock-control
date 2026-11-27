@@ -8,15 +8,23 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    if (!token.ler()) {
-      setCarregando(false);
-      return;
-    }
-    api
-      .get('/auth/me')
-      .then(({ data }) => setUsuario(data))
-      .catch(() => token.limpar())
-      .finally(() => setCarregando(false));
+    let ativo = true;
+    // Aba nova: aproveita a sessão de outra aba aberta do sistema, se houver
+    token.pedirDeOutraAba().then((atual) => {
+      if (!ativo) return;
+      if (!atual) {
+        setCarregando(false);
+        return;
+      }
+      api
+        .get('/auth/me')
+        .then(({ data }) => ativo && setUsuario(data))
+        .catch(() => token.limpar())
+        .finally(() => ativo && setCarregando(false));
+    });
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const entrar = useCallback(async (email, senha) => {
@@ -30,7 +38,7 @@ export function AuthProvider({ children }) {
   const atualizarUsuario = useCallback((dados) => setUsuario((u) => ({ ...u, ...dados })), []);
 
   const sair = useCallback(() => {
-    token.limpar();
+    token.sairDeTodas();
     setUsuario(null);
   }, []);
 

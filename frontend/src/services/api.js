@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const CHAVE_TOKEN = 'estoque_token';
+import { sessao } from './sessao.js';
 
 export const api = axios.create({
   // Padrão: mesma origem (/api). Em desenvolvimento o Vite repassa /api para a API (ver vite.config.js).
@@ -8,29 +8,8 @@ export const api = axios.create({
   timeout: 30000,
 });
 
-export const token = {
-  ler: () => {
-    try {
-      return localStorage.getItem(CHAVE_TOKEN);
-    } catch {
-      return null;
-    }
-  },
-  salvar: (valor) => {
-    try {
-      localStorage.setItem(CHAVE_TOKEN, valor);
-    } catch {
-      /* armazenamento indisponível */
-    }
-  },
-  limpar: () => {
-    try {
-      localStorage.removeItem(CHAVE_TOKEN);
-    } catch {
-      /* armazenamento indisponível */
-    }
-  },
-};
+// Token de login: guardado por aba e compartilhado entre as abas abertas (ver sessao.js)
+export const token = sessao;
 
 api.interceptors.request.use((config) => {
   const t = token.ler();
