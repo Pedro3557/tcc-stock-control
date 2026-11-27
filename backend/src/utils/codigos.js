@@ -10,4 +10,15 @@ function gerarCodigoEtiqueta() {
 
 const PADRAO_CODIGO = /^[2-9A-HJKMNP-Z]{10}$/;
 
-module.exports = { gerarCodigoEtiqueta, PADRAO_CODIGO };
+/**
+ * Extrai o código da etiqueta de um texto lido (QR Code com endereço ".../e/CODIGO" ou o código puro).
+ * Retorna null se o texto não for um código de etiqueta.
+ */
+function extrairCodigoEtiqueta(texto) {
+  const valor = String(texto || '').trim();
+  const daUrl = /\/e\/([A-Za-z0-9]{10})(?:[/?#]|$)/.exec(valor);
+  const candidato = (daUrl ? daUrl[1] : valor).toUpperCase();
+  return PADRAO_CODIGO.test(candidato) ? candidato : null;
+}
+
+module.exports = { gerarCodigoEtiqueta, extrairCodigoEtiqueta, PADRAO_CODIGO };

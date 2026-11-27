@@ -6,6 +6,9 @@ import { useToast } from '../context/ToastContext.jsx';
 import { STATUS, TIPOS, formatarQtd } from '../services/formatos.js';
 import Cabecalho from '../components/Cabecalho.jsx';
 import Campo from '../components/Campo.jsx';
+import Modal from '../components/Modal.jsx';
+import LeitorCodigo from '../components/LeitorCodigo.jsx';
+import Icone from '../components/Icone.jsx';
 
 /**
  * Configuração de cada tipo de movimentação:
@@ -59,6 +62,16 @@ export default function NovaMovimentacao() {
   const [enviando, setEnviando] = useState(false);
   const [ultimo, setUltimo] = useState(null);
   const [leitura, setLeitura] = useState('');
+  const [cameraAberta, setCameraAberta] = useState(false);
+  const [lidasCamera, setLidasCamera] = useState(0);
+
+  /** Cada leitura da câmera entra como uma linha na lista (sem repetir). */
+  function adicionarDaCamera(valor) {
+    const linhas = form.seriais.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (linhas.includes(valor)) return;
+    setForm({ ...form, seriais: [...linhas, valor].join('\n') });
+    setLidasCamera((n) => n + 1);
+  }
   const leituraRef = useRef(null);
 
   useEffect(() => {
@@ -259,6 +272,9 @@ export default function NovaMovimentacao() {
               {tipo === 'entrada_compra' ? 'Números de série / MAC das unidades recebidas' : 'Números de série ou MAC'}
               <span className="obrigatorio"> *</span>
             </span>
+            <button type="button" className="botao botao-pequeno botao-camera" onClick={() => { setLidasCamera(0); setCameraAberta(true); }}>
+              <Icone nome="camera" tamanho={15} /> Ler com a câmera
+            </button>
             {tipo !== 'entrada_compra' && (
               <input
                 ref={leituraRef}
@@ -326,6 +342,16 @@ export default function NovaMovimentacao() {
           </button>
         </div>
       </form>
+
+      <Modal titulo="Ler etiquetas com a câmera" aberto={cameraAberta} aoFechar={() => setCameraAberta(false)}>
+        <p className="texto-suave nota-topo">
+          Cada código lido entra na lista. {lidasCamera > 0 && <strong>{lidasCamera} adicionado(s) nesta leitura.</strong>}
+        </p>
+        <LeitorCodigo onLeitura={adicionarDaCamera} iniciarCamera autoFocoManual={false} />
+        <div className="formulario-acoes">
+          <button type="button" className="botao botao-primario" onClick={() => setCameraAberta(false)}>Concluir</button>
+        </div>
+      </Modal>
 
       {ultimo && (
         <div className="cartao confirmacao">

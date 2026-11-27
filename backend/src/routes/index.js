@@ -71,6 +71,7 @@ router.delete('/usuarios/:id', ADMIN, validar(v.id), a(usuarios.excluir));
 
 // Equipamentos (unidades serializadas)
 router.get('/equipamentos', validar(v.filtrosEquipamento), a(equipamentos.listar));
+router.get('/equipamentos/leitura', a(equipamentos.porLeitura));
 router.get('/equipamentos/:id', validar(v.id), a(equipamentos.obter));
 router.get('/equipamentos/:id/historico', validar(v.id), a(equipamentos.historico));
 router.put('/equipamentos/:id', ESCRITA, validar([...v.id, ...v.equipamento]), a(equipamentos.atualizar));

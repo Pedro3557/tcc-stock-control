@@ -5,6 +5,7 @@ const { normalizarMac, pareceMac, textoOuNull } = require('../utils/formatos');
 const { lerPaginacao, respostaPaginada } = require('../utils/paginacao');
 const { includesMovimentacao } = require('../services/filtrosMovimentacao');
 const auditoria = require('../services/auditoriaService');
+const { extrairCodigoEtiqueta } = require('../utils/codigos');
 
 async function listar(req, res) {
   const { busca, status, produtoId, tecnicoId, categoriaId } = req.query;
@@ -26,6 +27,7 @@ async function listar(req, res) {
     const like = `%${termo}%`;
     const ou = [
       { numeroSerie: { [Op.like]: like } },
+      { codigoEtiqueta: termo.toUpperCase() },
       { mac: { [Op.like]: like } },
       { clienteCodigo: { [Op.like]: like } },
       { clienteNome: { [Op.like]: like } },
@@ -102,4 +104,35 @@ async function atualizar(req, res) {
   res.json(equipamento);
 }
 
-module.exports = { listar, obter, historico, atualizar };
+/**
+ * Identifica o equipamento a partir de um texto lido: QR Code da etiqueta, código da etiqueta,
+ * número de série ou MAC (leitor de código de barras, câmera ou digitação).
+ */
+async function porLeitura(req, res) {
+  const valor = String(req.query.valor || '').trim();
+  if (!valor) throw new AppError('Informe o código lido.');
+
+  const codigo = extrairCodigoEtiqueta(valor);
+  const condicoes = [];
+  if (codigo) condicoes.push({ codigoEtiqueta: codigo });
+  condicoes.push({ numeroSerie: valor.toUpperCase() });
+  if (pareceMac(valor)) {
+    try {
+      condicoes.push({ mac: normalizarMac(valor) });
+    } catch {
+      /* não é MAC válido */
+    }
+  }
+
+  const equipamento = await Equipamento.findOne({
+    where: { [Op.or]: condicoes },
+    include: [
+      { model: Produto, as: 'produto', attributes: ['id', 'codigo', 'nome', 'marca', 'modelo'] },
+      { model: Tecnico, as: 'tecnico', attributes: ['id', 'nome'] },
+    ],
+  });
+  if (!equipamento) throw new AppError(`Nenhum equipamento encontrado para "${valor.slice(0, 60)}".`, 404);
+  res.json(equipamento);
+}
+
+module.exports = { listar, obter, historico, atualizar, porLeitura };

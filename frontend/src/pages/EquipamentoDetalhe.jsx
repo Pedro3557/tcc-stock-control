@@ -11,6 +11,64 @@ import StatusBadge from '../components/StatusBadge.jsx';
 import Modal from '../components/Modal.jsx';
 import Campo from '../components/Campo.jsx';
 import Icone from '../components/Icone.jsx';
+import { obterOrganizacao } from '../services/organizacao.js';
+
+/** QR Code da etiqueta (gerado no navegador; o QR só contém o endereço de consulta). */
+function QRCodeEtiqueta({ equipamento }) {
+  const [imagem, setImagem] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [gerando, setGerando] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    let ativo = true;
+    Promise.all([import('../services/etiquetas.js'), obterOrganizacao().catch(() => null)]).then(async ([m, org]) => {
+      const texto = m.conteudoQR(equipamento.codigoEtiqueta, org?.urlPublica);
+      const url = await m.qrDataURL(texto, 320);
+      if (ativo) {
+        setEndereco(texto);
+        setImagem(url);
+      }
+    });
+    return () => {
+      ativo = false;
+    };
+  }, [equipamento.codigoEtiqueta]);
+
+  async function imprimir(formato) {
+    setGerando(true);
+    try {
+      const { gerarPDFEtiquetas } = await import('../services/etiquetas.js');
+      await gerarPDFEtiquetas([equipamento], { formato });
+    } catch (e) {
+      toast.erro(`Não foi possível gerar a etiqueta: ${e.message}`);
+    } finally {
+      setGerando(false);
+    }
+  }
+
+  return (
+    <section className="cartao qr-cartao">
+      <h2 className="cartao-subtitulo">Etiqueta com QR Code</h2>
+      <div className="qr-conteudo">
+        {imagem ? <img src={imagem} alt={`QR Code do equipamento ${equipamento.numeroSerie}`} width="140" height="140" /> : <div className="qr-vazio" />}
+        <div>
+          <p className="texto-suave">Código permanente</p>
+          <p className="mono qr-codigo">{equipamento.codigoEtiqueta}</p>
+          <p className="texto-suave qr-endereco" title={endereco}>{endereco}</p>
+          <div className="acoes-rapidas">
+            <button type="button" className="botao botao-pequeno" onClick={() => imprimir('termica-50x30')} disabled={gerando}>
+              <Icone nome="etiqueta" tamanho={14} /> Etiqueta 50×30
+            </button>
+            <button type="button" className="botao botao-pequeno" onClick={() => imprimir('a4-3x7')} disabled={gerando}>
+              <Icone nome="pdf" tamanho={14} /> Folha A4
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /** Ações possíveis a partir do status atual da unidade. */
 const ACOES = {
@@ -100,7 +158,12 @@ export default function EquipamentoDetalhe() {
         )}
       </div>
 
-      <h2 className="secao-titulo">Histórico da unidade</h2>
+      <QRCodeEtiqueta equipamento={eq} />
+
+      <div className="cabecalho-secao">
+        <h2 className="secao-titulo">Histórico da unidade</h2>
+        <Link to={`/movimentacoes?equipamentoId=${eq.id}`} className="link-suave">Ver no histórico geral</Link>
+      </div>
       <div className="cartao">
         {eq.historico.length === 0 ? (
           <Vazio titulo="Sem histórico" />

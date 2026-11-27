@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { sequelize, Produto, Equipamento, Movimentacao, Tecnico, Fornecedor } = require('../models');
 const AppError = require('../utils/AppError');
 const { normalizarMac, pareceMac, textoOuNull } = require('../utils/formatos');
+const { extrairCodigoEtiqueta } = require('../utils/codigos');
 const { STATUS_ROTULO, TIPO_ROTULO, UNIDADES_INTEIRAS } = require('../config/constantes');
 
 /**
@@ -330,6 +331,9 @@ async function localizarEquipamentos(d, t) {
       if (pareceMac(i)) macs.push(normalizarMac(i));
     });
     if (macs.length) condicoes.push({ mac: macs });
+    // QR Code da etiqueta (endereço .../e/CODIGO) ou o código impresso
+    const codigos = identificadores.map(extrairCodigoEtiqueta).filter(Boolean);
+    if (codigos.length) condicoes.push({ codigoEtiqueta: codigos });
   }
 
   const equipamentos = await Equipamento.findAll({
@@ -344,7 +348,8 @@ async function localizarEquipamentos(d, t) {
   const naoEncontrados = identificadores.filter((i) => {
     const iu = i.toUpperCase();
     const mac = pareceMac(i) ? normalizarMac(i) : null;
-    return !equipamentos.some((e) => e.numeroSerie.toUpperCase() === iu || (mac && e.mac === mac));
+    const codigo = extrairCodigoEtiqueta(i);
+    return !equipamentos.some((e) => e.numeroSerie.toUpperCase() === iu || (mac && e.mac === mac) || (codigo && e.codigoEtiqueta === codigo));
   });
   const idsNaoEncontrados = ids.filter((id) => !equipamentos.some((e) => e.id === id));
   if (naoEncontrados.length || idsNaoEncontrados.length) {

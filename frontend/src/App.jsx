@@ -17,6 +17,9 @@ import Fornecedores from './pages/Fornecedores.jsx';
 import Categorias from './pages/Categorias.jsx';
 import Usuarios from './pages/Usuarios.jsx';
 import NaoEncontrado from './pages/NaoEncontrado.jsx';
+import Leitor from './pages/Leitor.jsx';
+import AbrirEtiqueta from './pages/AbrirEtiqueta.jsx';
+import Etiquetas from './pages/Etiquetas.jsx';
 
 export default function App() {
   return (
@@ -28,6 +31,9 @@ export default function App() {
         <Route path="produtos" element={<Produtos />} />
         <Route path="equipamentos" element={<Equipamentos />} />
         <Route path="equipamentos/:id" element={<EquipamentoDetalhe />} />
+        <Route path="ler" element={<Leitor />} />
+        <Route path="e/:codigo" element={<AbrirEtiqueta />} />
+        <Route path="etiquetas" element={<RotaProtegida perfis={['admin', 'almoxarife']}><Etiquetas /></RotaProtegida>} />
         <Route
           path="movimentacoes/nova"
           element={<RotaProtegida perfis={['admin', 'almoxarife']}><NovaMovimentacao /></RotaProtegida>}
