@@ -12,7 +12,6 @@
     "start": "node src/server.js",
     "migrate": "sequelize-cli db:migrate",
     "seed": "sequelize-cli db:seed:all",
-    "seed:undo": "echo \"Use npm run seed:demo:undo para remover os dados de demonstração.\"",
     "test": "node tests/executar.js",
     "redefinir-senha": "node scripts/redefinir-senha.js",
     "seed:demo": "sequelize-cli db:seed:all --seeders-path src/seeders-demo",

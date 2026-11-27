@@ -414,4 +414,4 @@ export function pdfTermoTecnico({ dados, usuario, organizacao }) {
   doc.save(nomeArquivo(`termo-${slug(tecnico.nome)}`));
 }
 
-export { novoDocumento, numerarPaginas, relatorioTabela, nomeArquivo, slug, ESTILO_TABELA, MARGEM };
+export { relatorioTabela };

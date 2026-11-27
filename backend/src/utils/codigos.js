@@ -21,4 +21,4 @@ function extrairCodigoEtiqueta(texto) {
   return PADRAO_CODIGO.test(candidato) ? candidato : null;
 }
 
-module.exports = { gerarCodigoEtiqueta, extrairCodigoEtiqueta, PADRAO_CODIGO };
+module.exports = { gerarCodigoEtiqueta, extrairCodigoEtiqueta };

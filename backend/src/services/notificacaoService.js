@@ -145,8 +145,6 @@ async function limparAntigas() {
 
 module.exports = {
   notificar,
-  abrirAlerta,
-  encerrarAlerta,
   verificarEstoque,
   listar,
   contarNaoLidas,

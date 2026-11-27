@@ -556,10 +556,4 @@ async function registrar(dadosBrutos, usuario, opcoes = {}) {
   return movimentacoes;
 }
 
-module.exports = {
-  registrar,
-  saldoTecnico,
-  recalcularSerializado,
-  interpretarListaEntrada,
-  REGRAS_SERIALIZADO,
-};
+module.exports = { registrar, interpretarListaEntrada, REGRAS_SERIALIZADO };

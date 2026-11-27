@@ -64,4 +64,4 @@ async function registrar({ req, usuario, acao, modulo, registroId, antes, depois
   }
 }
 
-module.exports = { registrar, limpar };
+module.exports = { registrar };

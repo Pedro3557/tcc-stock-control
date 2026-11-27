@@ -449,5 +449,4 @@ module.exports = {
   decidir,
   aprovar,
   cancelar,
-  situacaoEquipamento,
 };

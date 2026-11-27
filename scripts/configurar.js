@@ -185,7 +185,7 @@ async function configurarBanco() {
   if (!admin) {
     fecharLeitor();
     falhar('Não consegui entrar como root do MySQL.', [
-      'Se esqueceu a senha do root, a forma mais simples é reinstalar o MySQL ou usar o Docker (ver GUIA_INSTALACAO_WINDOWS.md).',
+      'Se esqueceu a senha do root, a forma mais simples é reinstalar o MySQL ou usar o Docker (ver docs/GUIA_INSTALACAO.md).',
       `Ou coloque em backend/.env um usuário do MySQL que você saiba a senha (DB_USER e DB_PASSWORD).`,
     ]);
   }

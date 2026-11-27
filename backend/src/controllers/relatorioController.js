@@ -417,4 +417,4 @@ async function dados(req, res) {
   });
 }
 
-module.exports = { exportar, dados, RELATORIOS, descreverFiltros };
+module.exports = { exportar, dados };

@@ -24,8 +24,6 @@ function textoOuNull(valor) {
   return texto === '' ? null : texto;
 }
 
-const formatadorMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
 function formatarNumeroBR(valor, casas = 2) {
   return Number(valor || 0).toLocaleString('pt-BR', {
     minimumFractionDigits: 0,
@@ -42,7 +40,6 @@ module.exports = {
   normalizarMac,
   pareceMac,
   textoOuNull,
-  formatadorMoeda,
   formatarNumeroBR,
   formatarDataHoraBR,
 };

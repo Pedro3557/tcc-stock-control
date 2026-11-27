@@ -476,7 +476,6 @@ module.exports = {
   verificar,
   restaurar,
   restaurarArquivoExterno,
-  aplicarRetencao,
   backupAutomaticoPendente,
   executarSePendente,
   marcarInterrompidos,

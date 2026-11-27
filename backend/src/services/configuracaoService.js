@@ -113,4 +113,4 @@ function limparCache() {
   cache = null;
 }
 
-module.exports = { DEFINICOES, obterTodas, obter, obterPublicas, definir, limparCache };
+module.exports = { obterTodas, obter, obterPublicas, definir, limparCache };
