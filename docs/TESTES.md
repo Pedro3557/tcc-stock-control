@@ -16,7 +16,9 @@ Só os testes unitários (não precisam de banco): `npm --prefix backend run tes
 
 Os testes integrados **nunca usam o banco de trabalho**. Eles usam `DB_NAME_TEST` (padrão `<DB_NAME>_teste`, ex.: `estoque_provedor_teste`), que é **apagado e recriado** no início de cada arquivo de teste com as migrations e o seed essencial reais. A configuração recusa rodar se `DB_NAME_TEST` for igual a `DB_NAME`.
 
-O usuário do banco precisa de permissão nesse banco. O `npm run configurar` concede essa permissão, e no Docker ela vem do script `docker/mysql-init/01-banco-teste.sql`. Os backups dos testes vão para uma pasta temporária, apagada no final.
+O usuário do banco precisa de permissão nesse banco. O `npm run configurar` concede essa permissão, inclusive em instalações antigas (pede a senha do root do MySQL), e no Docker ela vem do script `docker/mysql-init/01-banco-teste.sql`.
+
+Se só os 13 testes unitários passarem e os demais acusarem falta de permissão no banco de testes, rode `npm run configurar` na pasta principal e repita o `npm test`. Se o container Docker foi criado antes desta versão, libere uma vez: `docker compose exec mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS estoque_provedor_teste; GRANT ALL ON estoque_provedor_teste.* TO 'estoque'@'%';"`. Os backups dos testes vão para uma pasta temporária, apagada no final.
 
 ### Ferramentas
 
@@ -63,6 +65,7 @@ Executado em 27/11/2026, Node.js 22, MySQL 8.0.46, banco `estoque_provedor_teste
 | Restauração de backup travava com arquivos pequenos (o leitor de linhas era criado antes dos comandos `SET`) | Leitor criado imediatamente antes do laço de leitura |
 | Pasta de backups inacessível travava a API e o sistema de backup | O arquivo é aberto antes de começar; falhas são registradas e notificadas |
 | Migration de cadastros não podia ser desfeita (índice usado pela chave estrangeira) | `down` cria um índice simples antes de remover o composto |
+| Em instalações antigas o `npm run configurar` não liberava o banco de testes, e o `npm test` ficava travado | O `configurar` detecta e libera o acesso (pede a senha do root); os testes falham em segundos com a instrução |
 
 ## Verificações manuais (navegador)
 

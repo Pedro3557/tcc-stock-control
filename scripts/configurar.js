@@ -145,15 +145,29 @@ async function configurarBanco() {
     } catch {
       /* sem permissão para criar: o teste abaixo diz se o banco existe */
     }
+    let acessoPrincipal = false;
     try {
       await c.query(`USE \`${banco}\``);
+      acessoPrincipal = true;
       ok(`Conexão com o usuário "${usuario}" funcionando.`);
-      await c.end();
-      return;
     } catch {
-      await c.end();
       info(`O usuário "${usuario}" conecta, mas não tem acesso ao banco "${banco}".`);
     }
+    // Banco separado dos testes automatizados (npm test): instalações antigas não tinham essa permissão
+    let acessoTeste = false;
+    if (acessoPrincipal) {
+      try {
+        await c.query(`CREATE DATABASE IF NOT EXISTS \`${bancoTeste}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+        await c.query(`USE \`${bancoTeste}\``);
+        acessoTeste = true;
+        ok(`Banco de testes "${bancoTeste}" acessível.`);
+      } catch {
+        info(`O usuário "${usuario}" ainda não tem permissão no banco de testes "${bancoTeste}" (usado pelo "npm test").`);
+      }
+    }
+    await c.end();
+    if (acessoPrincipal && acessoTeste) return;
+    if (acessoPrincipal && process.argv.includes('--sem-banco-teste')) return;
   } catch (erro) {
     if (['ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH'].includes(erro.code)) {
       falhar(`Não foi possível chegar ao MySQL em ${base.host}:${base.port} — ele está ligado?`, DICAS_MYSQL_PARADO);

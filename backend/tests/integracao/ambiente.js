@@ -37,9 +37,21 @@ async function prepararBanco() {
   const cfg = configs.test;
   if (cfg.database === configs.development.database) throw new Error('Banco de testes igual ao banco de trabalho!');
   const conexao = await mysql.createConnection({ host: cfg.host, port: cfg.port, user: cfg.username, password: cfg.password });
-  await conexao.query(`DROP DATABASE IF EXISTS \`${cfg.database}\``);
-  await conexao.query(`CREATE DATABASE \`${cfg.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-  await conexao.end();
+  try {
+    await conexao.query(`DROP DATABASE IF EXISTS \`${cfg.database}\``);
+    await conexao.query(`CREATE DATABASE \`${cfg.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  } catch (erro) {
+    if (/ACCESS_DENIED/.test(erro.code || '')) {
+      throw new Error(
+        `O usuário "${cfg.username}" não tem permissão no banco de testes "${cfg.database}". ` +
+          'Rode "npm run configurar" na pasta principal do projeto (ele pede a senha do root do MySQL e libera o acesso).'
+      );
+    }
+    throw erro;
+  } finally {
+    // Fecha mesmo em caso de erro: conexão aberta impedia o processo de testes de terminar
+    await conexao.end();
+  }
   sequelizeCli('db:migrate');
   sequelizeCli('db:seed:all');
 }
