@@ -2,6 +2,17 @@
 
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [2.0.1] — 2026-11-27
+
+### Alterado
+- Senha forte obrigatória: 8+ caracteres com letra maiúscula, minúscula, número e caractere especial (na troca de senha, no cadastro de usuários e no script de redefinição). A tela mostra a lista de requisitos, em vermelho o que falta.
+
+### Corrigido
+- Laço infinito no `npm install` com npm 10.9 (postinstall da raiz).
+- No Windows o login não funcionava em desenvolvimento: o proxy do Vite usava `localhost` (IPv6 `::1`), onde a API não escuta.
+- Mensagem clara quando a API não está rodando.
+- `npm run configurar` passou a liberar o banco de testes também em instalações antigas.
+
 ## [2.0.0] — 2026-11-27
 
 Revisão, aprimoramento e finalização do sistema.

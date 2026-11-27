@@ -1,6 +1,15 @@
 const { body, param, query } = require('express-validator');
 const { PERFIS, TIPOS_CONTROLE, UNIDADES, TIPOS_MOVIMENTACAO, STATUS_EQUIPAMENTO } = require('../config/constantes');
 
+const { mensagemSenhaFraca } = require('../utils/senha');
+
+/** Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial. */
+function senhaForte(valor) {
+  const mensagem = mensagemSenhaFraca(valor);
+  if (mensagem) throw new Error(mensagem);
+  return true;
+}
+
 const id = [param('id').isInt({ min: 1 }).withMessage('ID inválido.')];
 
 const login = [
@@ -12,9 +21,7 @@ const trocarSenha = [
   body('senhaAtual').notEmpty().withMessage('Informe a senha atual.'),
   body('novaSenha')
     .isString().withMessage('Informe a nova senha.').bail()
-    .isLength({ min: 8 }).withMessage('A nova senha deve ter pelo menos 8 caracteres.').bail()
-    .matches(/[A-Za-z]/).withMessage('A nova senha deve ter ao menos uma letra.').bail()
-    .matches(/\d/).withMessage('A nova senha deve ter ao menos um número.'),
+    .custom(senhaForte),
 ];
 
 const categoria = [
@@ -63,14 +70,7 @@ const usuario = (parcial = false) => {
     opc('email').isEmail().withMessage('E-mail inválido.'),
     opc('perfil').isIn(PERFIS).withMessage('Perfil inválido. Use admin, almoxarife ou consulta.'),
     (parcial ? body('senha').optional({ values: 'falsy' }) : body('senha'))
-      .isLength({ min: 8 })
-      .withMessage('A senha deve ter pelo menos 8 caracteres.')
-      .bail()
-      .matches(/[A-Za-z]/)
-      .withMessage('A senha deve ter ao menos uma letra.')
-      .bail()
-      .matches(/\d/)
-      .withMessage('A senha deve ter ao menos um número.'),
+      .custom(senhaForte),
     body('ativo').optional().isBoolean().toBoolean(),
     body('recebeNotificacoes').optional().isBoolean().withMessage('Campo "recebe notificações" inválido.').toBoolean(),
     body('recebeEmail').optional().isBoolean().withMessage('Campo "recebe e-mail" inválido.').toBoolean(),

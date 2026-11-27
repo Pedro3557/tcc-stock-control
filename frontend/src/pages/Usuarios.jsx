@@ -17,7 +17,7 @@ export default function Usuarios() {
         { nome: 'nome', rotulo: 'Nome', obrigatorio: true },
         { nome: 'email', rotulo: 'E-mail', tipo: 'email', obrigatorio: true },
         { nome: 'perfil', rotulo: 'Perfil', tipo: 'select', opcoes: PERFIS, obrigatorio: true, padrao: 'almoxarife' },
-        { nome: 'senha', rotulo: 'Senha provisória', tipo: 'password', obrigatorio: true, dica: 'Mínimo de 8 caracteres, com letras e números. O usuário troca no primeiro acesso.' },
+        { nome: 'senha', rotulo: 'Senha provisória', tipo: 'password', obrigatorio: true, regrasSenha: true, dica: 'O usuário troca no primeiro acesso.' },
         { nome: 'recebeNotificacoes', rotulo: 'Recebe notificações no sistema', tipo: 'checkbox' },
         { nome: 'recebeEmail', rotulo: 'Recebe notificações por e-mail (se o SMTP estiver configurado)', tipo: 'checkbox', padrao: false },
         { nome: 'ativo', rotulo: 'Usuário ativo', tipo: 'checkbox', somenteEdicao: true },

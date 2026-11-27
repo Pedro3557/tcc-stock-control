@@ -54,7 +54,7 @@ Cada equipamento está sempre em **uma situação (status)**:
 
 1. Abra o endereço do sistema informado pela TI (ex.: `http://192.168.0.10:3333`).
 2. Entre com e-mail e senha.
-3. **No primeiro acesso** (ou quando o administrador redefinir sua senha), o sistema pede uma **senha nova**: mínimo de 8 caracteres, com letras e números.
+3. **No primeiro acesso** (ou quando o administrador redefinir sua senha), o sistema pede uma **senha nova** e mostra, em vermelho, o que ainda falta: mínimo de 8 caracteres, **uma letra maiúscula, uma minúscula, um número e um caractere especial** (ex.: `! @ # $ % & * -`). Cada item fica com ✓ quando é atendido.
 4. Para trocar a senha depois: **Trocar senha**, no rodapé do menu.
 5. Para sair: ícone de saída ao lado do seu nome.
 

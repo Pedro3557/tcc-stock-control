@@ -41,12 +41,12 @@ test('auditoria registra usuário, data, operação, módulo, registro, antes/de
 });
 
 test('auditoria nunca guarda senhas, hashes ou tokens', async () => {
-  await admin.post('/usuarios', { nome: 'Fulano', email: 'fulano@teste.com', senha: 'SenhaSecreta99', perfil: 'consulta' });
+  await admin.post('/usuarios', { nome: 'Fulano', email: 'fulano@teste.com', senha: 'SenhaSecreta@99', perfil: 'consulta' });
   const id = (await admin.get('/usuarios')).body.find((u) => u.email === 'fulano@teste.com').id;
-  await admin.put(`/usuarios/${id}`, { senha: 'OutraSecreta77', perfil: 'almoxarife' });
+  await admin.put(`/usuarios/${id}`, { senha: 'OutraSecreta@77', perfil: 'almoxarife' });
   const [linhas] = await models.sequelize.query('SELECT dadosAnteriores, dadosPosteriores, detalhe FROM auditorias');
   const tudo = JSON.stringify(linhas);
-  for (const proibido of ['SenhaSecreta99', 'OutraSecreta77', 'senhaHash', '$2a$', '"token"', admin.token]) {
+  for (const proibido of ['SenhaSecreta@99', 'OutraSecreta@77', 'senhaHash', '$2a$', '"token"', admin.token]) {
     assert.ok(!tudo.includes(proibido), `auditoria contém "${proibido}"`);
   }
   const alteracao = (await admin.get(`/auditoria?modulo=usuarios&acao=atualizar&registroId=${id}`)).body.dados[0];
@@ -58,8 +58,8 @@ test('registros de auditoria são imutáveis e só o admin consulta', async () =
   await assert.rejects(() => reg.update({ acao: 'adulterado' }), /não podem ser alterados/);
   await assert.rejects(() => models.Auditoria.destroy({ where: {} }), /não podem ser alterados/);
   assert.equal((await admin.put('/auditoria/1', {})).status, 404, 'não existe rota de edição');
-  await admin.post('/usuarios', { nome: 'Almox', email: 'almox@teste.com', senha: 'Provisoria123', perfil: 'almoxarife' });
-  const almox = await amb.entrar(app, 'almox@teste.com', 'Provisoria123', 'Almox-Definitiva-1');
+  await admin.post('/usuarios', { nome: 'Almox', email: 'almox@teste.com', senha: 'Provisoria@123', perfil: 'almoxarife' });
+  const almox = await amb.entrar(app, 'almox@teste.com', 'Provisoria@123', 'Almox-Definitiva-1');
   assert.equal((await almox.get('/auditoria')).status, 403);
 });
 

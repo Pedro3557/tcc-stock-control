@@ -35,6 +35,9 @@ test('senha provisória: o acesso fica bloqueado até a troca, e a troca invalid
 
   const fraca = await antigo.post('/auth/trocar-senha', { senhaAtual: 'admin123', novaSenha: 'abc' });
   assert.equal(fraca.status, 400);
+  const semEspecial = await antigo.post('/auth/trocar-senha', { senhaAtual: 'admin123', novaSenha: 'Admin2026' });
+  assert.equal(semEspecial.status, 400);
+  assert.equal(semEspecial.body.erro, 'A senha precisa ter: um caractere especial.');
 
   const troca = await antigo.post('/auth/trocar-senha', { senhaAtual: 'admin123', novaSenha: amb.SENHA_ADMIN });
   assert.equal(troca.status, 200);
@@ -59,13 +62,13 @@ test('rotas protegidas exigem token válido e não expirado', async () => {
 test('permissões por perfil no back-end (admin, almoxarife, consulta)', async () => {
   const admin = await amb.entrar(app, 'admin@provedor.com', amb.SENHA_ADMIN);
 
-  const novoAlmox = await admin.post('/usuarios', { nome: 'Almox', email: 'almox@teste.com', senha: 'Provisoria123', perfil: 'almoxarife' });
+  const novoAlmox = await admin.post('/usuarios', { nome: 'Almox', email: 'almox@teste.com', senha: 'Provisoria@123', perfil: 'almoxarife' });
   assert.equal(novoAlmox.status, 201);
   assert.equal(novoAlmox.body.precisaTrocarSenha, true);
-  await admin.post('/usuarios', { nome: 'Consulta', email: 'consulta@teste.com', senha: 'Provisoria123', perfil: 'consulta' });
+  await admin.post('/usuarios', { nome: 'Consulta', email: 'consulta@teste.com', senha: 'Provisoria@123', perfil: 'consulta' });
 
-  const almox = await amb.entrar(app, 'almox@teste.com', 'Provisoria123', 'Almox-Definitiva-1');
-  const consulta = await amb.entrar(app, 'consulta@teste.com', 'Provisoria123', 'Consulta-Definitiva-1');
+  const almox = await amb.entrar(app, 'almox@teste.com', 'Provisoria@123', 'Almox-Definitiva-1');
+  const consulta = await amb.entrar(app, 'consulta@teste.com', 'Provisoria@123', 'Consulta-Definitiva-1');
 
   // consulta só lê
   assert.equal((await consulta.get('/produtos')).status, 200);

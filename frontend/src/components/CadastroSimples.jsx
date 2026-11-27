@@ -8,6 +8,7 @@ import Vazio from './Vazio.jsx';
 import Modal from './Modal.jsx';
 import Campo from './Campo.jsx';
 import Icone from './Icone.jsx';
+import RegrasSenha, { senhaForte } from './RegrasSenha.jsx';
 
 /**
  * Tela genérica de cadastro (lista + formulário em modal).
@@ -69,6 +70,11 @@ export default function CadastroSimples({
 
   async function salvar(e) {
     e.preventDefault();
+    const fraca = campos.find((c) => c.regrasSenha && form[c.nome] && !senhaForte(form[c.nome]));
+    if (fraca) {
+      toast.erro('A senha ainda não atende a todos os requisitos (em vermelho).');
+      return;
+    }
     setSalvando(true);
     try {
       const dados = { ...form };
@@ -187,6 +193,7 @@ export default function CadastroSimples({
                     onChange={(e) => setForm({ ...form, [c.nome]: e.target.value })}
                   />
                 )}
+                {c.regrasSenha && (!editando?.id || form[c.nome]) && <RegrasSenha senha={form[c.nome] || ''} />}
               </Campo>
             ))}
           <div className="formulario-acoes">

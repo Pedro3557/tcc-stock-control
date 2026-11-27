@@ -282,7 +282,7 @@ As migrations só **adicionam** estruturas; os dados existentes são mantidos (v
 | `EADDRINUSE: 3333` | O sistema já está rodando (outra janela ou PM2). |
 | API não inicia em produção: `Defina JWT_SECRET…` | Gere um segredo: `npm run configurar` (em `.env` novo) ou coloque 32+ caracteres aleatórios em `JWT_SECRET`. |
 | "Muitas tentativas de login" | Aguarde 15 minutos ou reinicie a API. |
-| Esqueci a senha do admin | `npm --prefix backend run redefinir-senha -- admin@provedor.com SenhaTemp2026` (troca obrigatória no próximo login). |
+| Esqueci a senha do admin | `npm --prefix backend run redefinir-senha -- admin@provedor.com Temp@Senha2026` (troca obrigatória no próximo login; a senha precisa ter maiúscula, minúscula, número e caractere especial). |
 | Câmera não abre no celular | Precisa de HTTPS (passo 8). Use "Ler por foto" enquanto isso. |
 | QR Code abre endereço errado | Ajuste **Configurações → Endereço do sistema na rede** e reimprima as etiquetas. |
 | Planilha recusada | Salve como **Pasta de Trabalho do Excel (*.xlsx)**. |

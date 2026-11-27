@@ -38,8 +38,8 @@ before(async () => {
   app = require('../../src/app');
   admin = await amb.entrar(app, 'admin@provedor.com', 'admin123');
   c = await amb.cadastrosBasicos(admin);
-  await admin.post('/usuarios', { nome: 'Almox', email: 'almox@teste.com', senha: 'Provisoria123', perfil: 'almoxarife' });
-  almox = await amb.entrar(app, 'almox@teste.com', 'Provisoria123', 'Almox-Definitiva-1');
+  await admin.post('/usuarios', { nome: 'Almox', email: 'almox@teste.com', senha: 'Provisoria@123', perfil: 'almoxarife' });
+  almox = await amb.entrar(app, 'almox@teste.com', 'Provisoria@123', 'Almox-Definitiva-1');
   await admin.post('/movimentacoes', { tipo: 'entrada_compra', produtoId: c.conector.id, quantidade: 50, fornecedorId: c.fornecedor.id, notaFiscal: 'NF-1' });
   await admin.post('/movimentacoes', { tipo: 'entrada_compra', produtoId: c.onu.id, fornecedorId: c.fornecedor.id, notaFiscal: 'NF-1', seriais: 'Q-1;aa:bb:cc:00:10:01\nQ-2\nQ-3\nQ-4' });
   await admin.post('/movimentacoes', { tipo: 'saida_tecnico', seriais: 'Q-4', tecnicoId: c.tecnico.id });

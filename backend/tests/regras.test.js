@@ -9,6 +9,7 @@ const ExcelJS = require('exceljs');
 const { normalizarMac, pareceMac } = require('../src/utils/formatos');
 const { interpretarListaEntrada, REGRAS_SERIALIZADO } = require('../src/services/movimentacaoService');
 const { gerarCSV, numeroBR, quantidadeBR } = require('../src/services/csv');
+const { mensagemSenhaFraca } = require('../src/utils/senha');
 const {
   lerPlanilha,
   normalizarCabecalho,
@@ -118,4 +119,14 @@ test('lê planilha .xlsx com cabeçalhos em português e ignora linhas vazias', 
 
 test('recusa arquivo que não é planilha', async () => {
   await assert.rejects(() => lerPlanilha(Buffer.from('não sou uma planilha')), /Não foi possível ler o arquivo/);
+});
+
+test('senha forte: maiúscula, minúscula, número e caractere especial', () => {
+  assert.equal(mensagemSenhaFraca('Ação@2026'), null);
+  assert.equal(mensagemSenhaFraca('Admin-de-teste-2026'), null);
+  assert.equal(mensagemSenhaFraca('Admin2026'), 'A senha precisa ter: um caractere especial.');
+  assert.equal(mensagemSenhaFraca('admin@2026'), 'A senha precisa ter: uma letra maiúscula.');
+  assert.equal(mensagemSenhaFraca('ADMIN@2026'), 'A senha precisa ter: uma letra minúscula.');
+  assert.equal(mensagemSenhaFraca('Admin@abc'), 'A senha precisa ter: um número.');
+  assert.match(mensagemSenhaFraca('A@1a'), /pelo menos 8 caracteres/);
 });

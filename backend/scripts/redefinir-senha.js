@@ -1,10 +1,11 @@
 /**
  * Redefine a senha de um usuário pela linha de comando (ex.: esqueceu a senha do único admin).
- * Uso: npm run redefinir-senha -- admin@provedor.com NovaSenha123
+ * Uso: npm run redefinir-senha -- admin@provedor.com Nova@Senha2026
  * A senha vira provisória: o usuário precisa trocá-la no próximo login.
  */
 const bcrypt = require('bcryptjs');
 const { Usuario, sequelize } = require('../src/models');
+const { mensagemSenhaFraca } = require('../src/utils/senha');
 
 async function main() {
   const [email, senha] = process.argv.slice(2);
@@ -12,8 +13,9 @@ async function main() {
     console.error('Uso: npm run redefinir-senha -- <email> <nova-senha>');
     process.exit(1);
   }
-  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) {
-    console.error('A senha deve ter pelo menos 8 caracteres, com letras e números.');
+  const fraca = mensagemSenhaFraca(senha);
+  if (fraca) {
+    console.error(fraca);
     process.exit(1);
   }
   const usuario = await Usuario.findOne({ where: { email: email.trim().toLowerCase() } });
